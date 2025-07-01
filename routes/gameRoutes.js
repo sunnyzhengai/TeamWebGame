@@ -11,9 +11,16 @@ router.post('/create-game', (req, res) => {
 router.post('/add-player', (req, res) => {
   try {
     const { gameCode, playerName } = req.body;
+    console.log('Add player request:', { gameCode, playerName });
+    console.log('Available games before adding player:', Object.keys(games));
+    
     const player = add_player_to_game(gameCode, playerName);
+    console.log('Player added successfully:', player);
+    console.log('Available games after adding player:', Object.keys(games));
+    
     res.json(player);
   } catch (error) {
+    console.error('Error adding player:', error);
     res.status(404).json({ error: error.message });
   }
 });
@@ -36,11 +43,19 @@ router.post('/start-game', (req, res) => {
 router.get('/game-info/:gameCode', (req, res) => {
   try {
     const { gameCode } = req.params;
+    console.log('Game info request for gameCode:', gameCode);
+    console.log('Available games:', Object.keys(games));
+    console.log('Games data:', games);
+    
     const game = Object.values(games).find(g => g.gameCode === gameCode);
+    console.log('Found game:', game);
+    
     if (!game) {
+      console.log('Game not found for gameCode:', gameCode);
       return res.status(404).json({ error: 'Game not found' });
     }
-    res.json({
+    
+    const response = {
       gameId: game.gameId,
       gameCode: game.gameCode,
       adminName: game.adminName,
@@ -48,8 +63,12 @@ router.get('/game-info/:gameCode', (req, res) => {
       numTeams: game.numTeams,
       status: game.status,
       currentRoundId: game.currentRoundId
-    });
+    };
+    
+    console.log('Sending game info response:', response);
+    res.json(response);
   } catch (error) {
+    console.error('Error in game-info endpoint:', error);
     res.status(400).json({ error: error.message });
   }
 });
