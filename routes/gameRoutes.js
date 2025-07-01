@@ -374,20 +374,31 @@ router.get('/declare-winner/:gameId', (req, res) => {
 
 router.get('/debug/games', (req, res) => {
   try {
+    console.log('Debug games request');
+    console.log('Available games:', Object.keys(games));
+    console.log('Games data:', games);
+    
     const gameList = Object.values(games).map(game => ({
       gameId: game.gameId,
       gameCode: game.gameCode,
       adminName: game.adminName,
       playerCount: game.players.length,
-      status: game.status
+      status: game.status,
+      createdAt: game.createdAt
     }));
     
     res.json({
       success: true,
       games: gameList,
-      totalGames: gameList.length
+      totalGames: gameList.length,
+      memoryInfo: {
+        gamesCount: Object.keys(games).length,
+        playersCount: Object.keys(players).length,
+        roundsCount: Object.keys(rounds).length
+      }
     });
   } catch (error) {
+    console.error('Error in debug games:', error);
     res.status(400).json({ error: error.message });
   }
 });

@@ -218,39 +218,44 @@
   </div>
 
   <script>
+    // --- State Management with localStorage ---
     let currentGame = null;
     let currentRound = null;
     let refreshInterval = null;
 
-    // Initialize admin panel
-    document.addEventListener('DOMContentLoaded', function() {
-      // Check if there's a game in localStorage
-      const savedGame = localStorage.getItem('adminGame');
-      console.log('Saved game from localStorage:', savedGame);
-      
-      if (savedGame) {
-        try {
-          currentGame = JSON.parse(savedGame);
-          console.log('Parsed current game:', currentGame);
-          
-          // Show both sections - admin can continue existing game or start new one
-          showGameManagement();
-          // Also show the creation section in case they want to start fresh
-          document.getElementById('gameCreationSection').style.display = 'block';
-        } catch (error) {
-          console.error('Error parsing saved game:', error);
-          localStorage.removeItem('adminGame');
-        }
+    // Load game data from localStorage
+    function loadGameFromStorage() {
+      const storedGame = localStorage.getItem('adminGame');
+      if (storedGame) {
+        currentGame = JSON.parse(storedGame);
+        console.log('Loaded game from localStorage:', currentGame);
       }
       
-      // Add page refresh warning
-      window.addEventListener('beforeunload', function(e) {
-        if (currentGame && currentGame.status !== 'waiting') {
-          e.preventDefault();
-          e.returnValue = '⚠️ Warning: Refreshing this page will lose your current game session. Are you sure you want to leave?';
-          return e.returnValue;
-        }
-      });
+      const storedRound = localStorage.getItem('adminRound');
+      if (storedRound) {
+        currentRound = JSON.parse(storedRound);
+        console.log('Loaded round from localStorage:', currentRound);
+      }
+    }
+
+    // Save game data to localStorage
+    function saveGameToStorage() {
+      if (currentGame) {
+        localStorage.setItem('adminGame', JSON.stringify(currentGame));
+        console.log('Saved game to localStorage:', currentGame);
+      }
+      if (currentRound) {
+        localStorage.setItem('adminRound', JSON.stringify(currentRound));
+        console.log('Saved round to localStorage:', currentRound);
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadGameFromStorage();
+      if (currentGame) {
+        showGameManagement();
+      }
     });
 
     async function createGame() {
@@ -277,7 +282,7 @@
         
         if (res.ok) {
           currentGame = data;
-          localStorage.setItem('adminGame', JSON.stringify(currentGame));
+          saveGameToStorage();
           showResult('createResult', `
             <div class="game-info">
               <div><strong>✅ Game Created Successfully!</strong></div>
@@ -325,8 +330,11 @@
         const data = await res.json();
         
         if (res.ok) {
+          // Server has the game data, update our local copy
           currentGame.playerCount = data.playerCount;
-          localStorage.setItem('adminGame', JSON.stringify(currentGame));
+          currentGame.status = data.status;
+          currentGame.currentRoundId = data.currentRoundId;
+          saveGameToStorage();
           
           // Get detailed player list
           const playerList = await getPlayerList();
@@ -337,9 +345,19 @@
           const startBtn = document.getElementById('startGameBtn');
           startBtn.disabled = data.playerCount === 0;
           startBtn.textContent = data.playerCount === 0 ? '⏸️ No Players Yet' : `▶️ Start Game (${data.playerCount} players)`;
+        } else {
+          // Server doesn't have the game data, use localStorage data
+          console.log('Server lost game data, using localStorage fallback');
+          displayPlayers([]); // Show empty player list
+          
+          const startBtn = document.getElementById('startGameBtn');
+          startBtn.disabled = true;
+          startBtn.textContent = '⚠️ Server Data Lost';
         }
       } catch (error) {
         console.error('Error refreshing players:', error);
+        // Use localStorage data as fallback
+        displayPlayers([]);
       }
     }
 
