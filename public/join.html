@@ -436,9 +436,28 @@
               showWaitingMessage();
             }
           }
+        } else {
+          // Server doesn't have the game data, try to restore it
+          console.log('Server lost game data, attempting to restore from join page...');
+          const restored = await restoreGameDataToServer();
+          
+          if (restored) {
+            // Try to load again after restoration
+            console.log('Data restored, retrying loadPlayerStatus...');
+            setTimeout(loadPlayerStatus, 1000);
+            return;
+          } else {
+            console.log('Failed to restore data, showing error message');
+            showMessage('Game data not available. Please ask the admin to refresh the page.', 'error');
+          }
         }
       } catch (error) {
         console.error('Error loading player status:', error);
+        // Try to restore data on error
+        const restored = await restoreGameDataToServer();
+        if (restored) {
+          setTimeout(loadPlayerStatus, 1000);
+        }
       }
     }
 
@@ -459,9 +478,32 @@
           document.getElementById('playerRole').textContent = role;
           
           document.getElementById('teamAssignment').style.display = 'block';
+        } else {
+          // Team details not found, try to restore data
+          console.log('Team details not found, attempting to restore data...');
+          const restored = await restoreGameDataToServer();
+          
+          if (restored) {
+            // Try to load team info again after restoration
+            console.log('Data restored, retrying loadTeamInfo...');
+            setTimeout(loadTeamInfo, 1000);
+            return;
+          } else {
+            console.log('Failed to restore data for team info');
+            document.getElementById('teamName').textContent = 'Not available';
+            document.getElementById('teamMembers').textContent = 'Not available';
+            document.getElementById('teamLead').textContent = 'Not available';
+            document.getElementById('playerRole').textContent = 'Not available';
+            document.getElementById('teamAssignment').style.display = 'block';
+          }
         }
       } catch (error) {
         console.error('Error loading team info:', error);
+        // Try to restore data on error
+        const restored = await restoreGameDataToServer();
+        if (restored) {
+          setTimeout(loadTeamInfo, 1000);
+        }
       }
     }
 
@@ -608,6 +650,69 @@
         loadPlayerStatus();
       }
     }, 10000);
+
+    // Restore game data to server when needed
+    async function restoreGameDataToServer() {
+      if (!currentPlayer) return false;
+      
+      try {
+        console.log('Restoring game data to server from join page...');
+        
+        // Get game data from localStorage (if admin has it)
+        const adminGame = localStorage.getItem('adminGame');
+        const adminRound = localStorage.getItem('adminRound');
+        
+        if (!adminGame) {
+          console.log('No admin game data in localStorage');
+          return false;
+        }
+        
+        const gameData = JSON.parse(adminGame);
+        const roundData = adminRound ? JSON.parse(adminRound) : null;
+        
+        // Collect all player data from localStorage
+        const playerData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('player_')) {
+            try {
+              const player = JSON.parse(localStorage.getItem(key));
+              playerData[player.playerId] = player;
+            } catch (e) {
+              console.error('Error parsing player data:', e);
+            }
+          }
+        }
+        
+        const restoreData = {
+          gameData: gameData,
+          roundData: roundData,
+          playerData: playerData
+        };
+        
+        console.log('Sending restore data from join page:', restoreData);
+        
+        const res = await fetch('/api/restore-game-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(restoreData)
+        });
+        
+        const data = await res.json();
+        console.log('Restore response from join page:', data);
+        
+        if (res.ok) {
+          console.log('Game data restored successfully from join page');
+          return true;
+        } else {
+          console.error('Failed to restore game data from join page:', data.error);
+          return false;
+        }
+      } catch (error) {
+        console.error('Error restoring game data from join page:', error);
+        return false;
+      }
+    }
   </script>
 </body>
 </html> 
