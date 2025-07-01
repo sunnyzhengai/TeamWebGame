@@ -452,4 +452,48 @@ router.get('/refresh-scores/:roundId', (req, res) => {
   }
 });
 
+// Data restoration endpoint for serverless environments
+router.post('/restore-game-data', (req, res) => {
+  try {
+    const { gameData, roundData, playerData } = req.body;
+    console.log('Restoring game data from client:', { 
+      hasGameData: !!gameData, 
+      hasRoundData: !!roundData, 
+      hasPlayerData: !!playerData 
+    });
+    
+    if (gameData) {
+      games[gameData.gameId] = gameData;
+      console.log('Restored game:', gameData.gameCode);
+    }
+    
+    if (roundData) {
+      rounds[roundData.roundId] = roundData;
+      console.log('Restored round:', roundData.roundId);
+    }
+    
+    if (playerData) {
+      Object.entries(playerData).forEach(([playerId, player]) => {
+        players[playerId] = player;
+      });
+      console.log('Restored players:', Object.keys(playerData).length);
+    }
+    
+    console.log('After restoration - Games:', Object.keys(games).length, 'Rounds:', Object.keys(rounds).length, 'Players:', Object.keys(players).length);
+    
+    res.json({
+      success: true,
+      message: 'Game data restored successfully',
+      restored: {
+        games: Object.keys(games).length,
+        rounds: Object.keys(rounds).length,
+        players: Object.keys(players).length
+      }
+    });
+  } catch (error) {
+    console.error('Error restoring game data:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
 module.exports = router; 

@@ -346,13 +346,24 @@
           startBtn.disabled = data.playerCount === 0;
           startBtn.textContent = data.playerCount === 0 ? '⏸️ No Players Yet' : `▶️ Start Game (${data.playerCount} players)`;
         } else {
-          // Server doesn't have the game data, use localStorage data
-          console.log('Server lost game data, using localStorage fallback');
-          displayPlayers([]); // Show empty player list
+          // Server doesn't have the game data, try to restore it
+          console.log('Server lost game data, attempting to restore...');
+          const restored = await restoreGameDataToServer();
           
-          const startBtn = document.getElementById('startGameBtn');
-          startBtn.disabled = true;
-          startBtn.textContent = '⚠️ Server Data Lost';
+          if (restored) {
+            // Try to refresh again after restoration
+            console.log('Data restored, retrying refresh...');
+            setTimeout(refreshPlayers, 1000);
+            return;
+          } else {
+            // Use localStorage fallback
+            console.log('Failed to restore data, using localStorage fallback');
+            displayPlayers([]); // Show empty player list
+            
+            const startBtn = document.getElementById('startGameBtn');
+            startBtn.disabled = true;
+            startBtn.textContent = '⚠️ Server Data Lost';
+          }
         }
       } catch (error) {
         console.error('Error refreshing players:', error);
@@ -595,6 +606,13 @@
       console.log('Sending request with:', { roundId: currentRound.roundId, category, items });
       
       try {
+        // Restore game data to server before submitting preferences
+        console.log('Restoring data before submitting preferences...');
+        await restoreGameDataToServer();
+        
+        // Small delay to ensure round data is fully processed
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const res = await fetch('/api/set-round-preferences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -933,6 +951,57 @@
         clearInterval(window.roundProgressInterval);
       }
       window.roundProgressInterval = setInterval(refreshRoundProgress, 10000);
+    }
+
+    // Restore game data to server when needed
+    async function restoreGameDataToServer() {
+      if (!currentGame) return false;
+      
+      try {
+        console.log('Restoring game data to server...');
+        
+        // Collect all player data from localStorage
+        const playerData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('player_')) {
+            try {
+              const player = JSON.parse(localStorage.getItem(key));
+              playerData[player.playerId] = player;
+            } catch (e) {
+              console.error('Error parsing player data:', e);
+            }
+          }
+        }
+        
+        const restoreData = {
+          gameData: currentGame,
+          roundData: currentRound,
+          playerData: playerData
+        };
+        
+        console.log('Sending restore data:', restoreData);
+        
+        const res = await fetch('/api/restore-game-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(restoreData)
+        });
+        
+        const data = await res.json();
+        console.log('Restore response:', data);
+        
+        if (res.ok) {
+          console.log('Game data restored successfully');
+          return true;
+        } else {
+          console.error('Failed to restore game data:', data.error);
+          return false;
+        }
+      } catch (error) {
+        console.error('Error restoring game data:', error);
+        return false;
+      }
     }
   </script>
 </body>
