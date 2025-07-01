@@ -1,44 +1,20 @@
 // services/gameService.js
-const fs = require('fs');
-const path = require('path');
+// In-memory storage for serverless compatibility
+const games = {};
+const players = {};
+const rounds = {};
 
-// File paths for persistent storage
-const GAMES_FILE = path.join(__dirname, '..', 'data', 'games.json');
-const ROUNDS_FILE = path.join(__dirname, '..', 'data', 'rounds.json');
-const PLAYERS_FILE = path.join(__dirname, '..', 'data', 'players.json');
-
-// Ensure data directory exists
-const dataDir = path.join(__dirname, '..', 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+// Add some debugging and error handling
+function logDataState() {
+  console.log('Current data state:');
+  console.log('- Games:', Object.keys(games).length);
+  console.log('- Players:', Object.keys(players).length);
+  console.log('- Rounds:', Object.keys(rounds).length);
 }
 
-// Load data from files or initialize empty objects
-function loadData() {
-  try {
-    const games = fs.existsSync(GAMES_FILE) ? JSON.parse(fs.readFileSync(GAMES_FILE, 'utf8')) : {};
-    const rounds = fs.existsSync(ROUNDS_FILE) ? JSON.parse(fs.readFileSync(ROUNDS_FILE, 'utf8')) : {};
-    const players = fs.existsSync(PLAYERS_FILE) ? JSON.parse(fs.readFileSync(PLAYERS_FILE, 'utf8')) : {};
-    return { games, rounds, players };
-  } catch (error) {
-    console.error('Error loading data:', error);
-    return { games: {}, rounds: {}, players: {} };
-  }
-}
-
-// Save data to files
-function saveData(games, rounds, players) {
-  try {
-    fs.writeFileSync(GAMES_FILE, JSON.stringify(games, null, 2));
-    fs.writeFileSync(ROUNDS_FILE, JSON.stringify(rounds, null, 2));
-    fs.writeFileSync(PLAYERS_FILE, JSON.stringify(players, null, 2));
-  } catch (error) {
-    console.error('Error saving data:', error);
-  }
-}
-
-// Initialize data
-let { games, rounds, players } = loadData();
+// Initialize with some logging
+console.log('GameService initialized with in-memory storage');
+logDataState();
 
 function create_game(adminName, numTeams = 2) {
   const gameId = Date.now().toString();
@@ -59,7 +35,8 @@ function create_game(adminName, numTeams = 2) {
   };
   
   games[gameId] = game;
-  saveData(games, rounds, players);
+  console.log(`Created game: ${gameCode} (${gameId})`);
+  logDataState();
   
   return game;
 }
@@ -79,7 +56,7 @@ function add_player_to_game(gameCode, playerName) {
 
   players[playerId] = player;
   game.players.push(playerId);
-  saveData(games, rounds, players);
+  console.log(`Added player: ${playerName} to game: ${gameCode}`);
   return player;
 }
 
@@ -130,8 +107,7 @@ function start_game(gameId) {
   game.teamDetails = teams; // Store full team details
   game.status = 'in_progress';
   
-  saveData(games, rounds, players);
-  
+  console.log(`Started game: ${game.gameCode} with ${teams.length} teams`);
   return {
     teams,
     distribution: {
@@ -167,7 +143,7 @@ function select_origin_team(gameId, teamId) {
   game.rounds.push(roundId);
   game.currentRoundId = roundId;
 
-  saveData(games, rounds, players);
+  console.log(`Created round: ${roundId} for team: ${teamId}`);
   return round;
 }
 
@@ -179,7 +155,7 @@ function set_round_preferences(roundId, category, items) {
   round.category = category;
   round.items = items;
   round.status = 'active'; // Move to active status after preferences are set
-  saveData(games, rounds, players);
+  console.log(`Set preferences for round: ${roundId} - ${category}: ${items.join(', ')}`);
   return round;
 }
 
@@ -190,7 +166,7 @@ function submit_origin_ranking(roundId, teamId, orderedItems) {
   if (round.originRanking) throw new Error('Ranking already submitted');
 
   round.originRanking = orderedItems;
-  saveData(games, rounds, players);
+  console.log(`Origin ranking submitted for round: ${roundId}`);
   return round;
 }
 
@@ -207,7 +183,7 @@ function submit_guess(roundId, teamId, guess) {
   }
 
   round.guesses.push({ teamId, guess });
-  saveData(games, rounds, players);
+  console.log(`Guess submitted for team: ${teamId} in round: ${roundId}`);
   return round;
 }
 
@@ -241,7 +217,7 @@ function end_current_round(gameId) {
   }
   
   game.currentRoundId = null;
-  saveData(games, rounds, players);
+  console.log(`Ended round: ${round?.roundId} for game: ${gameId}`);
   return round;
 }
 
@@ -376,14 +352,15 @@ module.exports = {
   submit_origin_ranking,
   submit_guess,
   score_guesses,
-  get_scoreboard,
   get_current_round,
   end_current_round,
   get_team_info,
   get_team_details,
+  get_scoreboard,
   declare_winner,
   get_origin_team_info,
-  games,  // exported for testing/inspection
-  players,  // exported for testing/inspection
-  rounds   // exported for testing/inspection
+  // Export data for debugging
+  games,
+  players,
+  rounds
 };
