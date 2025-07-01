@@ -136,6 +136,9 @@ router.get('/round-info/:roundId', (req, res) => {
       return res.status(404).json({ error: 'Round not found' });
     }
     
+    // Add roundId to the round object
+    round.roundId = roundId;
+    
     // Find the game that contains this round
     const game = Object.values(games).find(g => g.rounds && g.rounds.includes(roundId));
     if (game) {

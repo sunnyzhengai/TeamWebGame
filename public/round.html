@@ -130,10 +130,12 @@
       try {
         // Load round
         let rRes = await fetch(`/api/round-info/${roundId}`); round = await rRes.json();
+        console.log('Round info response:', round);
         if (!rRes.ok) throw new Error(round.error||'Round not found');
         
         // Load player
         let pRes = await fetch(`/api/player-info/${playerId}`); player = await pRes.json();
+        console.log('Player info response:', player);
         if (!pRes.ok) throw new Error(player.error||'Player not found');
         
         // Check if player has a team assignment
@@ -267,6 +269,13 @@
         return;
       }
       
+      console.log('Submitting origin ranking with data:', {
+        roundId: round.roundId,
+        teamId: team.teamId,
+        orderedItems: ranking,
+        round: round
+      });
+      
       try {
         const res = await fetch('/api/submit-origin-ranking', {
           method: 'POST',
@@ -279,6 +288,8 @@
         });
         
         const data = await res.json();
+        console.log('Submit origin ranking response:', data);
+        
         if (res.ok) {
           originSubmitted = true;
           qs('submitOriginBtn').disabled = true;
@@ -288,6 +299,7 @@
           showStatus(data.error || 'Error submitting ranking','error');
         }
       } catch(e) { 
+        console.error('Error in submitOriginRanking:', e);
         showStatus('Network error: ' + e.message,'error'); 
       }
     }
