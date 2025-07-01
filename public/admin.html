@@ -637,7 +637,7 @@
         for (const team of currentGame.teams) {
           console.log('Processing team:', team);
           if (team.leadId) {
-            const roundUrl = `http://localhost:4000/round.html?gameCode=${currentGame.gameCode}&roundId=${currentRound.roundId}&playerId=${team.leadId}`;
+            const roundUrl = `/round.html?gameCode=${currentGame.gameCode}&roundId=${currentRound.roundId}&playerId=${team.leadId}`;
             roundUrls.push({
               teamId: team.teamId,
               teamName: team.name,
@@ -775,7 +775,7 @@
       if (!currentRound) return;
       
       try {
-        const res = await fetch(`http://localhost:4000/api/round-info/${currentRound.roundId}`);
+        const res = await fetch(`/api/round-info/${currentRound.roundId}`);
         const roundData = await res.json();
         
         if (res.ok) {
