@@ -268,7 +268,7 @@
       }
       
       try {
-        const res = await fetch('http://localhost:4000/api/create-game', {
+        const res = await fetch('/api/create-game', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ adminName, numTeams })
@@ -321,7 +321,7 @@
       if (!currentGame) return;
       
       try {
-        const res = await fetch(`http://localhost:4000/api/game-info/${currentGame.gameCode}`);
+        const res = await fetch(`/api/game-info/${currentGame.gameCode}`);
         const data = await res.json();
         
         if (res.ok) {
@@ -351,7 +351,7 @@
       
       try {
         console.log('Fetching players for game:', currentGame.gameCode); // Debug log
-        const res = await fetch(`http://localhost:4000/api/game-players/${currentGame.gameCode}`);
+        const res = await fetch(`/api/game-players/${currentGame.gameCode}`);
         const data = await res.json();
         
         console.log('API response:', data); // Debug log
@@ -392,7 +392,7 @@
       if (!currentGame) return;
       
       try {
-        const res = await fetch('http://localhost:4000/api/start-game', {
+        const res = await fetch('/api/start-game', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ gameId: currentGame.gameId })
@@ -438,7 +438,7 @@
         // Try to get the lead's name
         if (team.leadId) {
           try {
-            const res = await fetch(`http://localhost:4000/api/player-info/${team.leadId}`);
+            const res = await fetch(`/api/player-info/${team.leadId}`);
             const playerData = await res.json();
             if (res.ok && playerData.playerName) {
               leadName = playerData.playerName;
@@ -468,7 +468,7 @@
       if (!teamId) return;
       
       try {
-        const res = await fetch('http://localhost:4000/api/select-origin-team', {
+        const res = await fetch('/api/select-origin-team', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ gameId: currentGame.gameId, teamId })
@@ -561,7 +561,7 @@
       items = items.slice(0, 4);
       
       try {
-        const res = await fetch('http://localhost:4000/api/set-round-preferences', {
+        const res = await fetch('/api/set-round-preferences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ roundId: currentRound.roundId, category, items })
@@ -601,7 +601,7 @@
       if (!currentGame) return;
       
       try {
-        const res = await fetch(`http://localhost:4000/api/game-info/${currentGame.gameCode}`);
+        const res = await fetch(`/api/game-info/${currentGame.gameCode}`);
         const data = await res.json();
         
         if (res.ok && data.teams) {
