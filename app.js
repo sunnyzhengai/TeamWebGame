@@ -14,6 +14,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 
+// Serve specific pages
+app.get('/admin.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/join.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'join.html'));
+});
+
 // Handle all other routes by serving the home page
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
