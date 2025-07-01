@@ -326,7 +326,7 @@
       if (!currentPlayer) return;
       
       try {
-        const res = await fetch(`http://localhost:4000/api/player-info/${currentPlayer.playerId}`);
+        const res = await fetch(`/api/player-info/${currentPlayer.playerId}`);
         const data = await res.json();
         
         if (res.ok && data.playerName === currentPlayer.playerName) {
@@ -364,7 +364,7 @@
       joinBtn.textContent = 'Joining...';
       
       try {
-        const res = await fetch('http://localhost:4000/api/add-player', {
+        const res = await fetch('/api/add-player', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ gameCode, playerName })
@@ -418,7 +418,7 @@
       console.log('loadPlayerStatus called with currentPlayer:', currentPlayer);
       
       try {
-        const res = await fetch(`http://localhost:4000/api/game-info/${currentPlayer.gameCode}`);
+        const res = await fetch(`/api/game-info/${currentPlayer.gameCode}`);
         const data = await res.json();
         
         if (res.ok) {
@@ -446,7 +446,7 @@
       if (!currentPlayer || !currentPlayer.teamId) return;
       
       try {
-        const res = await fetch(`http://localhost:4000/api/team-details/${currentPlayer.gameId}/${currentPlayer.teamId}`);
+        const res = await fetch(`/api/team-details/${currentPlayer.gameId}/${currentPlayer.teamId}`);
         const data = await res.json();
         
         if (res.ok) {
@@ -470,7 +470,7 @@
       console.log('Current player:', currentPlayer);
       
       try {
-        const res = await fetch(`http://localhost:4000/api/round-info/${roundId}`);
+        const res = await fetch(`/api/round-info/${roundId}`);
         const data = await res.json();
         
         if (res.ok) {
@@ -488,7 +488,7 @@
           if (data.originTeamId && !isOriginTeam) {
             console.log('Loading origin team info for team ID:', data.originTeamId);
             try {
-              const originTeamRes = await fetch(`http://localhost:4000/api/origin-team-info/${roundId}`);
+              const originTeamRes = await fetch(`/api/origin-team-info/${roundId}`);
               const originTeamData = await originTeamRes.json();
               console.log('Origin team API response:', originTeamData);
               
@@ -564,7 +564,7 @@
           }
         }
         
-        const url = `http://localhost:4000/round.html?gameCode=${currentPlayer.gameCode}&roundId=${currentRound.roundId}&playerId=${currentPlayer.playerId}`;
+        const url = `/round.html?gameCode=${currentPlayer.gameCode}&roundId=${currentRound.roundId}&playerId=${currentPlayer.playerId}`;
         console.log('Opening round URL:', url);
         window.open(url, '_blank');
       } else {
