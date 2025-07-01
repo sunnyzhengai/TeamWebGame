@@ -962,12 +962,31 @@
         
         // Collect all player data from localStorage
         const playerData = {};
+        
+        // Check for playerInfo (singular) - used by join page
+        const playerInfo = localStorage.getItem('playerInfo');
+        if (playerInfo) {
+          try {
+            const player = JSON.parse(playerInfo);
+            if (player.playerId) {
+              playerData[player.playerId] = player;
+              console.log('Found playerInfo:', player);
+            }
+          } catch (e) {
+            console.error('Error parsing playerInfo:', e);
+          }
+        }
+        
+        // Check for player_* keys (plural with underscore)
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key && key.startsWith('player_')) {
             try {
               const player = JSON.parse(localStorage.getItem(key));
-              playerData[player.playerId] = player;
+              if (player.playerId) {
+                playerData[player.playerId] = player;
+                console.log('Found player_* key:', key, player);
+              }
             } catch (e) {
               console.error('Error parsing player data:', e);
             }
@@ -981,6 +1000,7 @@
         };
         
         console.log('Sending restore data:', restoreData);
+        console.log('Found players to restore:', Object.keys(playerData));
         
         const res = await fetch('/api/restore-game-data', {
           method: 'POST',
