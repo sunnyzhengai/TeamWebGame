@@ -204,17 +204,30 @@ router.get('/origin-team-info/:roundId', (req, res) => {
 router.post('/set-round-preferences', (req, res) => {
   try {
     const { roundId, category, items } = req.body;
+    console.log('Received set-round-preferences request:', { roundId, category, items });
+    console.log('Available rounds:', Object.keys(rounds));
+    
     if (!roundId || !category || !items || !Array.isArray(items)) {
+      console.error('Invalid request data:', { roundId, category, items });
       return res.status(400).json({ error: 'Round ID, category, and items array are required' });
     }
     
+    console.log('Looking for round with ID:', roundId);
+    console.log('Round exists:', !!rounds[roundId]);
+    if (rounds[roundId]) {
+      console.log('Round details:', rounds[roundId]);
+    }
+    
     const round = set_round_preferences(roundId, category, items);
+    console.log('Successfully set preferences for round:', round);
+    
     res.json({
       success: true,
       round,
       message: `Round preferences set successfully. Round is now active.`
     });
   } catch (error) {
+    console.error('Error in set-round-preferences:', error);
     res.status(400).json({ error: error.message });
   }
 });

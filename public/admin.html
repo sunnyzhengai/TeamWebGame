@@ -464,8 +464,10 @@
     async function selectOriginTeam() {
       if (!currentGame || !currentGame.teams) return;
       
-              const teamId = prompt('Enter team ID to select as origin team (e.g., team_1, team_2):');
+      const teamId = prompt('Enter team ID to select as origin team (e.g., team_1, team_2):');
       if (!teamId) return;
+      
+      console.log('Selecting origin team:', teamId, 'for game:', currentGame.gameId);
       
       try {
         const res = await fetch('/api/select-origin-team', {
@@ -475,8 +477,11 @@
         });
         const data = await res.json();
         
+        console.log('Select origin team response:', data);
+        
         if (res.ok) {
           currentRound = data.round;
+          console.log('Set currentRound to:', currentRound);
           localStorage.setItem('adminRound', JSON.stringify(currentRound));
           
           // Update team display to show origin team
@@ -501,9 +506,11 @@
             </div>
           `);
         } else {
+          console.error('Error selecting origin team:', data);
           showResult('currentRoundInfo', `Error: ${data.error}`, 'error');
         }
       } catch (error) {
+        console.error('Error in selectOriginTeam:', error);
         showResult('currentRoundInfo', `Error: ${error.message}`, 'error');
       }
     }
@@ -531,7 +538,14 @@
     }
 
     async function submitPreferences() {
-      if (!currentRound) return;
+      if (!currentRound) {
+        console.error('No currentRound found');
+        alert('No current round found. Please select an origin team first.');
+        return;
+      }
+      
+      console.log('Submitting preferences for round:', currentRound);
+      console.log('Round ID:', currentRound.roundId);
       
       const category = document.getElementById('prefCategory').value;
       const itemsText = document.getElementById('prefItems').value;
@@ -560,6 +574,8 @@
       // Limit to first 4 items if more are provided
       items = items.slice(0, 4);
       
+      console.log('Sending request with:', { roundId: currentRound.roundId, category, items });
+      
       try {
         const res = await fetch('/api/set-round-preferences', {
           method: 'POST',
@@ -567,6 +583,8 @@
           body: JSON.stringify({ roundId: currentRound.roundId, category, items })
         });
         const data = await res.json();
+        
+        console.log('Response:', data);
         
         if (res.ok) {
           currentRound = data.round;
@@ -590,9 +608,11 @@
             </div>
           `);
         } else {
+          console.error('Error response:', data);
           alert(`Error: ${data.error}`);
         }
       } catch (error) {
+        console.error('Fetch error:', error);
         alert(`Error: ${error.message}`);
       }
     }
@@ -691,8 +711,6 @@
       });
     }
 
-
-
     function viewScoreboard() {
       if (!currentRound || !currentGame) {
         alert('No active round or game found');
@@ -729,8 +747,6 @@
       console.log('Opening winner URL:', winnerUrl);
       window.open(winnerUrl, '_blank');
     }
-
-
 
     function showResult(elementId, message, type = 'success') {
       const element = document.getElementById(elementId);
@@ -900,8 +916,6 @@
       }
       window.roundProgressInterval = setInterval(refreshRoundProgress, 10000);
     }
-
-
   </script>
 </body>
 </html> 
