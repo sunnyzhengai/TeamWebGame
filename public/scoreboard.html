@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamGame - Scoreboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .scoreboard-matrix {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .scoreboard-matrix h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .matrix-table th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .matrix-table th:first-child {
+            text-align: left;
+            min-width: 120px;
+        }
+
+        .origin-row {
+            background: #d4edda;
+            font-weight: bold;
+            color: #155724;
+        }
+
+        .origin-row td {
+            border-color: #c3e6cb;
+        }
+
+        .team-row {
+            background: #f8f9fa;
+        }
+
+        .team-row:nth-child(even) {
+            background: #e9ecef;
+        }
+
+        .team-total-row {
+            background: #fff3cd;
+            font-weight: bold;
+            color: #856404;
+        }
+
+        .team-total-row td {
+            border-color: #ffeaa7;
+        }
+
+        .item-cell {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin: 2px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .score-cell {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .score-cell.high {
+            color: #28a745;
+        }
+
+        .score-cell.medium {
+            color: #ffc107;
+        }
+
+        .score-cell.low {
+            color: #dc3545;
+        }
+
+        .total-score {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .category-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .category-info h3 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .matrix-table {
+                font-size: 0.9em;
+            }
+
+            .matrix-table th,
+            .matrix-table td {
+                padding: 8px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 TeamGame Scoreboard</h1>
+            <p>Round Results - Simple Matrix View</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadScoreboard()">🔄 Refresh Scoreboard</button>
+                <button class="btn btn-success" onclick="scoreRound()">🎯 Score Round</button>
+                <button class="btn btn-warning" onclick="goToAdmin()">⚙️ Admin Panel</button>
+                <button class="btn btn-primary" onclick="goToRound()">🎮 Back to Round</button>
+                <button class="btn btn-success" onclick="viewWinner()">🏅 View Winner</button>
+            </div>
+
+            <div id="loading" class="loading">
+                <h3>Loading scoreboard...</h3>
+                <p>Please wait while we fetch the latest results.</p>
+            </div>
+
+            <div id="error" class="error" style="display: none;"></div>
+
+            <div id="scoreboard-content" style="display: none;">
+                <!-- Category Info -->
+                <div id="category-info" class="category-info" style="display: none;">
+                    <h3 id="category-title">Category</h3>
+                    <p id="category-items">Items</p>
+                </div>
+
+                <!-- Scoreboard Matrix -->
+                <div class="scoreboard-matrix">
+                    <h2>📊 Round Results Matrix</h2>
+                    <div id="matrix-container">
+                        <div class="no-data">No data available yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentGame = null;
+        let currentRound = null;
+
+        // Load URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameCode = urlParams.get('gameCode');
+        const roundId = urlParams.get('roundId');
+        const gameId = urlParams.get('gameId');
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            if (gameCode && roundId) {
+                loadScoreboard();
+            } else {
+                showError('Missing required parameters: gameCode and roundId');
+            }
+        });
+
+        async function loadScoreboard() {
+            if (!roundId) {
+                showError('Round ID is required');
+                return;
+            }
+
+            try {
+                hideError();
+                showLoading();
+
+                // Load round info
+                const roundRes = await fetch(`http://localhost:4000/api/round-info/${roundId}`);
+                const roundData = await roundRes.json();
+
+                if (!roundRes.ok) {
+                    throw new Error(roundData.error || 'Failed to load round info');
+                }
+
+                currentRound = roundData;
+                currentGame = { gameId: roundData.gameId };
+
+                // Load scores
+                const scoresRes = await fetch(`http://localhost:4000/api/score-guesses/${roundId}`);
+                const scoresData = await scoresRes.json();
+
+                if (!scoresRes.ok) {
+                    throw new Error(scoresData.error || 'Failed to load scores');
+                }
+
+                // Load overall scoreboard if we have a gameId
+                let overallStandings = null;
+                if (roundData.gameId) {
+                    try {
+                        const standingsRes = await fetch(`http://localhost:4000/api/scoreboard/${roundData.gameId}`);
+                        const standingsData = await standingsRes.json();
+                        if (standingsRes.ok) {
+                            overallStandings = standingsData;
+                        }
+                    } catch (error) {
+                        console.warn('Could not load overall standings:', error);
+                    }
+                }
+
+                displayScoreboard(roundData, scoresData, overallStandings);
+                hideLoading();
+
+            } catch (error) {
+                hideLoading();
+                showError(`Error loading scoreboard: ${error.message}`);
+            }
+        }
+
+        function displayScoreboard(roundData, scoresData, overallStandings) {
+            const content = document.getElementById('scoreboard-content');
+            content.style.display = 'block';
+
+            // Display category info
+            displayCategoryInfo(roundData);
+
+            // Display matrix
+            displayMatrix(roundData, scoresData, overallStandings);
+        }
+
+        function displayCategoryInfo(roundData) {
+            const categoryInfo = document.getElementById('category-info');
+            const categoryTitle = document.getElementById('category-title');
+            const categoryItems = document.getElementById('category-items');
+
+            if (roundData.category && roundData.items) {
+                categoryTitle.textContent = roundData.category;
+                categoryItems.textContent = roundData.items.join(' • ');
+                categoryInfo.style.display = 'block';
+            } else {
+                categoryInfo.style.display = 'none';
+            }
+        }
+
+        function displayMatrix(roundData, scoresData, overallStandings) {
+            const container = document.getElementById('matrix-container');
+            
+            if (!roundData.originRanking || roundData.originRanking.length === 0) {
+                container.innerHTML = '<div class="no-data">Origin team has not submitted ranking yet.</div>';
+                return;
+            }
+
+            // Get all teams (origin + guessing)
+            const originTeamId = roundData.originTeamId;
+            const guessingTeams = scoresData.scores ? [...new Set(scoresData.scores.map(s => s.teamId))] : [];
+            
+            // Create table
+            let tableHtml = `
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>1st</th>
+                            <th>2nd</th>
+                            <th>3rd</th>
+                            <th>4th</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Origin team row
+            tableHtml += `
+                <tr class="origin-row">
+                    <td><strong>🎯 ${originTeamId}</strong></td>
+                    <td><span class="item-cell">${roundData.originRanking[0]}</span></td>
+                    <td><span class="item-cell">${roundData.originRanking[1]}</span></td>
+                    <td><span class="item-cell">${roundData.originRanking[2]}</span></td>
+                    <td><span class="item-cell">${roundData.originRanking[3]}</span></td>
+                    <td><span class="score-cell">-</span></td>
+                </tr>
+            `;
+
+            // Guessing teams rows
+            guessingTeams.forEach(teamId => {
+                const teamGuesses = roundData.guesses ? roundData.guesses.filter(g => g.teamId === teamId) : [];
+                const teamScores = scoresData.scores ? scoresData.scores.filter(s => s.teamId === teamId) : [];
+                
+                // Add 3 rows for each team (attempts)
+                for (let i = 0; i < 3; i++) {
+                    const guess = teamGuesses[i];
+                    const score = teamScores[i];
+                    
+                    if (guess) {
+                        const scoreClass = getScoreClass(score ? score.score : 0);
+                        tableHtml += `
+                            <tr class="team-row">
+                                <td>${i === 0 ? `<strong>${teamId}</strong>` : ''}</td>
+                                <td><span class="item-cell">${guess.guess[0]}</span></td>
+                                <td><span class="item-cell">${guess.guess[1]}</span></td>
+                                <td><span class="item-cell">${guess.guess[2]}</span></td>
+                                <td><span class="item-cell">${guess.guess[3]}</span></td>
+                                <td><span class="score-cell ${scoreClass}">${score ? score.score : 0}</span></td>
+                            </tr>
+                        `;
+                    } else {
+                        // Empty row for unused attempts
+                        tableHtml += `
+                            <tr class="team-row">
+                                <td>${i === 0 ? `<strong>${teamId}</strong>` : ''}</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                // Team total row
+                const totalScore = teamScores.reduce((sum, s) => sum + s.score, 0);
+                const bestScore = Math.max(...teamScores.map(s => s.score));
+                tableHtml += `
+                    <tr class="team-total-row">
+                        <td><strong>${teamId} Total</strong></td>
+                        <td colspan="4"><em>Best Score: ${bestScore}/4</em></td>
+                        <td><span class="total-score">${totalScore}</span></td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHtml;
+        }
+
+        function getScoreClass(score) {
+            if (score >= 3) return 'high';
+            if (score >= 1) return 'medium';
+            return 'low';
+        }
+
+        async function scoreRound() {
+            if (!roundId) {
+                showError('Round ID is required');
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:4000/api/score-guesses/${roundId}`);
+                const data = await res.json();
+                
+                if (res.ok) {
+                    alert(`Round scored successfully! ${data.totalGuesses} guesses processed.`);
+                    loadScoreboard(); // Refresh the display
+                } else {
+                    showError(`Error scoring round: ${data.error}`);
+                }
+            } catch (error) {
+                showError(`Error scoring round: ${error.message}`);
+            }
+        }
+
+        function goToAdmin() {
+            window.location.href = 'admin.html';
+        }
+
+        function goToRound() {
+            if (gameCode && roundId) {
+                window.location.href = `round.html?gameCode=${gameCode}&roundId=${roundId}`;
+            } else {
+                showError('Cannot navigate to round: missing parameters');
+            }
+        }
+
+        function viewWinner() {
+            if (gameCode && gameId) {
+                window.location.href = `winner.html?gameCode=${gameCode}&gameId=${gameId}`;
+            } else {
+                showError('Cannot navigate to winner page: missing parameters');
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('scoreboard-content').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html> 

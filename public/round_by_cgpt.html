@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guess Preferences - Round</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 20px auto; }
+    .card { border: 1px solid #ccc; padding: 20px; margin-top: 20px; }
+    input, button, select { margin: 5px 0; display: block; }
+  </style>
+</head>
+<body>
+  <h1>Guess Preferences - Round</h1>
+  
+  <div class="card" id="status">
+    <strong>Team:</strong> <span id="teamName"></span><br>
+    <strong>You are:</strong> <span id="role"></span><br>
+    <strong>Origin Team:</strong> <span id="originTeamName"></span><br>
+    <strong>Origin Members:</strong> <span id="originTeamMembers"></span>
+  </div>
+
+  <div class="card">
+    <h3>Category: <span id="category"></span></h3>
+    <ul id="itemsList"></ul>
+  </div>
+
+  <div class="card" id="submitSection">
+    <h3 id="submitTitle"></h3>
+    <label>Enter your ordered preference (1-4):</label>
+    <ol>
+      <li><select id="rank1"></select></li>
+      <li><select id="rank2"></select></li>
+      <li><select id="rank3"></select></li>
+      <li><select id="rank4"></select></li>
+    </ol>
+    <button onclick="submitOrder()">Submit</button>
+    <p id="attemptsLeft" style="display: none;"></p>
+  </div>
+
+  <script>
+    const roundId = localStorage.getItem('roundId');
+    const playerId = localStorage.getItem('playerId');
+    const gameId = localStorage.getItem('gameId');
+
+    let teamId = null;
+    let isOrigin = false;
+    let isLead = false;
+    let category = "";
+    let items = [];
+    let guessesLeft = 3;
+
+    async function loadRound() {
+      const [gameRes, roundRes] = await Promise.all([
+        fetch(`/api/game/${gameId}`),
+        fetch(`/api/round/${roundId}`)
+      ]);
+      const game = await gameRes.json();
+      const round = await roundRes.json();
+
+      const player = game.players.find(p => p.playerId === playerId);
+      const team = game.teamDetails.find(t => t.teamId === player.teamId);
+      teamId = team.teamId;
+      isOrigin = team.teamId === round.originTeamId;
+      isLead = team.leadId === playerId;
+      category = round.category;
+      items = round.items;
+
+      document.getElementById('teamName').innerText = team.name;
+      document.getElementById('role').innerText = isLead ? (isOrigin ? 'Origin Team Lead' : 'Team Lead') : 'Team Member';
+
+      const origin = game.teamDetails.find(t => t.teamId === round.originTeamId);
+      document.getElementById('originTeamName').innerText = origin.name;
+      document.getElementById('originTeamMembers').innerText = origin.playerIds.map(pid => {
+        const p = game.players.find(p => p.playerId === pid);
+        return p.playerName;
+      }).join(', ');
+
+      document.getElementById('category').innerText = category;
+      const itemList = document.getElementById('itemsList');
+      itemList.innerHTML = '';
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.innerText = item;
+        itemList.appendChild(li);
+      });
+
+      const dropdowns = [rank1, rank2, rank3, rank4];
+      dropdowns.forEach(select => {
+        select.innerHTML = '';
+        items.forEach(item => {
+          const option = document.createElement('option');
+          option.value = item;
+          option.innerText = item;
+          select.appendChild(option);
+        });
+      });
+
+      if (!isLead) {
+        document.getElementById('submitSection').style.display = 'none';
+      } else {
+        document.getElementById('submitTitle').innerText = isOrigin ? 'Submit Your Team’s Ranked Preferences' : 'Guess the Origin Team’s Preferences';
+        if (!isOrigin) {
+          document.getElementById('attemptsLeft').style.display = 'block';
+          document.getElementById('attemptsLeft').innerText = `You have ${guessesLeft} attempts left.`;
+        }
+      }
+    }
+
+    async function submitOrder() {
+      const guess = [rank1.value, rank2.value, rank3.value, rank4.value];
+      const unique = new Set(guess);
+      if (unique.size !== 4) return alert("Each item must be unique.");
+
+      const path = isOrigin ? 'origin-ranking' : 'guess';
+      const res = await fetch(`/api/round/${roundId}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, orderedItems: guess })
+      });
+
+      if (!res.ok) {
+        const error = await res.text();
+        alert(error);
+        return;
+      }
+
+      alert('Submission successful!');
+      document.querySelector('button').disabled = true;
+    }
+
+    loadRound();
+  </script>
+</body>
+</html>

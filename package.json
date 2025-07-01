@@ -1,0 +1,25 @@
+{
+  "name": "teamwebgame",
+  "version": "1.0.0",
+  "description": "TeamWebGame.com - The ultimate team guessing game",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "build": "echo 'No build step required for Node.js app'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": ["game", "team", "guessing", "multiplayer"],
+  "author": "TeamWebGame.com",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

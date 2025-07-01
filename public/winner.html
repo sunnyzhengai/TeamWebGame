@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamGame - Winner Announcement</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="confetti" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23confetti)"/></svg>');
+            animation: confetti 3s linear infinite;
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(-100px) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .winner-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+            animation: winnerGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes winnerGlow {
+            0% { box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3); }
+            100% { box-shadow: 0 8px 35px rgba(255, 215, 0, 0.6); }
+        }
+
+        .winner-title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .winner-list {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .winner-card {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid #ffd700;
+            animation: winnerBounce 1s ease-in-out;
+        }
+
+        @keyframes winnerBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .winner-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .winner-score {
+            font-size: 2em;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .tie-indicator {
+            font-size: 1.5em;
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+        }
+
+        .game-stats {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .game-stats h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .final-standings {
+            background: #fff3cd;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .final-standings h2 {
+            color: #856404;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .standings-table th,
+        .standings-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .standings-table th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .standings-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .standings-table tr:hover {
+            background: #e7f3ff;
+        }
+
+        .position {
+            font-weight: bold;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .position-1 {
+            color: #ffd700;
+        }
+
+        .position-2 {
+            color: #c0c0c0;
+        }
+
+        .position-3 {
+            color: #cd7f32;
+        }
+
+        .winner-row {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ffd700;
+            animation: confettiFall 3s linear infinite;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2.5em;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .winner-section {
+                padding: 30px 20px;
+            }
+
+            .winner-title {
+                font-size: 2em;
+            }
+
+            .winner-list {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Game Over!</h1>
+            <p>Final Results & Winner Announcement</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadWinnerData()">🔄 Refresh Results</button>
+                <button class="btn btn-success" onclick="goToScoreboard()">📊 View Scoreboard</button>
+                <button class="btn btn-warning" onclick="goToAdmin()">⚙️ Admin Panel</button>
+                <button class="btn btn-primary" onclick="startNewGame()">🎮 New Game</button>
+            </div>
+
+            <div id="loading" class="loading">
+                <h3>Loading winner data...</h3>
+                <p>Please wait while we calculate the final results.</p>
+            </div>
+
+            <div id="error" class="error" style="display: none;"></div>
+
+            <div id="winner-content" style="display: none;">
+                <!-- Winner Section -->
+                <div class="winner-section" id="winner-section">
+                    <div class="winner-title" id="winner-title">🏆 Winner!</div>
+                    <div class="winner-list" id="winner-list">
+                        <!-- Winners will be displayed here -->
+                    </div>
+                    <div class="tie-indicator" id="tie-indicator" style="display: none;">
+                        It's a tie! All teams performed equally well!
+                    </div>
+                </div>
+
+                <!-- Game Statistics -->
+                <div class="game-stats">
+                    <h2>📊 Game Statistics</h2>
+                    <div class="stats-grid" id="stats-grid">
+                        <!-- Stats will be displayed here -->
+                    </div>
+                </div>
+
+                <!-- Final Standings -->
+                <div class="final-standings">
+                    <h2>🏅 Final Standings</h2>
+                    <div id="standings-container">
+                        <!-- Standings table will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="celebration" id="celebration"></div>
+
+    <script>
+        let currentGame = null;
+
+        // Load URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameCode = urlParams.get('gameCode');
+        const gameId = urlParams.get('gameId');
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            if (gameCode && gameId) {
+                loadWinnerData();
+                createConfetti();
+            } else if (gameCode) {
+                // Try to fetch gameId from gameCode
+                console.log('GameId missing, trying to fetch from gameCode:', gameCode);
+                fetchGameIdFromGameCode();
+            } else {
+                showError('Missing required parameters: gameCode and gameId');
+            }
+        });
+
+        async function fetchGameIdFromGameCode() {
+            try {
+                const res = await fetch(`http://localhost:4000/api/game-info/${gameCode}`);
+                const data = await res.json();
+                
+                if (res.ok && data.gameId) {
+                    console.log('Found gameId from gameCode:', data.gameId);
+                    // Update URL parameters
+                    const url = new URL(window.location);
+                    url.searchParams.set('gameId', data.gameId);
+                    window.history.replaceState({}, '', url);
+                    
+                    // Load winner data with the found gameId
+                    loadWinnerData();
+                    createConfetti();
+                } else {
+                    showError('Could not find game information. Please check the game code.');
+                }
+            } catch (error) {
+                showError(`Error fetching game information: ${error.message}`);
+            }
+        }
+
+        async function loadWinnerData() {
+            if (!gameId) {
+                showError('Game ID is required');
+                return;
+            }
+
+            try {
+                hideError();
+                showLoading();
+
+                // Load winner data
+                const winnerRes = await fetch(`http://localhost:4000/api/declare-winner/${gameId}`);
+                const winnerData = await winnerRes.json();
+
+                if (!winnerRes.ok) {
+                    throw new Error(winnerData.error || 'Failed to load winner data');
+                }
+
+                // Load overall scoreboard
+                const scoreboardRes = await fetch(`http://localhost:4000/api/scoreboard/${gameId}`);
+                const scoreboardData = await scoreboardRes.json();
+
+                if (!scoreboardRes.ok) {
+                    throw new Error(scoreboardData.error || 'Failed to load scoreboard');
+                }
+
+                // Load game info
+                const gameInfoRes = await fetch(`http://localhost:4000/api/game-info/${gameCode}`);
+                const gameInfo = await gameInfoRes.json();
+
+                if (!gameInfoRes.ok) {
+                    throw new Error(gameInfo.error || 'Failed to load game info');
+                }
+
+                currentGame = { gameId, gameCode, ...gameInfo };
+
+                displayWinnerData(winnerData, scoreboardData, gameInfo);
+                hideLoading();
+
+            } catch (error) {
+                hideLoading();
+                showError(`Error loading winner data: ${error.message}`);
+            }
+        }
+
+        function displayWinnerData(winnerData, scoreboardData, gameInfo) {
+            const content = document.getElementById('winner-content');
+            content.style.display = 'block';
+
+            // Display winner section
+            displayWinnerSection(winnerData);
+
+            // Display game statistics
+            displayGameStats(scoreboardData, gameInfo);
+
+            // Display final standings
+            displayFinalStandings(scoreboardData, winnerData);
+        }
+
+        function displayWinnerSection(winnerData) {
+            const winnerTitle = document.getElementById('winner-title');
+            const winnerList = document.getElementById('winner-list');
+            const tieIndicator = document.getElementById('tie-indicator');
+
+            if (winnerData.noScores) {
+                winnerTitle.textContent = '🎮 Game in Progress';
+                winnerList.innerHTML = '<div class="winner-card"><div class="winner-name">No Winner Yet</div><div class="winner-score">Play more rounds!</div></div>';
+                tieIndicator.style.display = 'none';
+                return;
+            }
+
+            if (winnerData.isTie) {
+                winnerTitle.textContent = '🤝 It\'s a Tie!';
+                tieIndicator.style.display = 'block';
+            } else {
+                winnerTitle.textContent = '🏆 Winner!';
+                tieIndicator.style.display = 'none';
+            }
+
+            const winnersHtml = winnerData.winners.map(winner => `
+                <div class="winner-card">
+                    <div class="winner-name">${winner.teamName}</div>
+                    <div class="winner-score">${winnerData.maxScore} pts</div>
+                </div>
+            `).join('');
+
+            winnerList.innerHTML = winnersHtml;
+        }
+
+        function displayGameStats(scoreboardData, gameInfo) {
+            const statsGrid = document.getElementById('stats-grid');
+            
+            const totalTeams = scoreboardData.scoreboard.length;
+            const totalRounds = scoreboardData.totalRounds || 0;
+            const totalPoints = scoreboardData.scoreboard.reduce((sum, team) => sum + team.score, 0);
+            const avgPoints = totalTeams > 0 ? Math.round(totalPoints / totalTeams) : 0;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${totalTeams}</div>
+                    <div class="stat-label">Total Teams</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalRounds}</div>
+                    <div class="stat-label">Rounds Played</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalPoints}</div>
+                    <div class="stat-label">Total Points</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${avgPoints}</div>
+                    <div class="stat-label">Average Points</div>
+                </div>
+            `;
+        }
+
+        function displayFinalStandings(scoreboardData, winnerData) {
+            const container = document.getElementById('standings-container');
+            
+            if (!scoreboardData.scoreboard || scoreboardData.scoreboard.length === 0) {
+                container.innerHTML = '<div class="no-data">No standings available yet.</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Team</th>
+                            <th>Total Score</th>
+                            <th>Rounds Played</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${scoreboardData.scoreboard.map((team, index) => {
+                            let positionClass = '';
+                            if (index === 0) positionClass = 'position-1';
+                            else if (index === 1) positionClass = 'position-2';
+                            else if (index === 2) positionClass = 'position-3';
+                            
+                            const isWinner = winnerData.winners && winnerData.winners.some(w => w.teamId === team.teamId);
+                            const rowClass = isWinner ? 'winner-row' : '';
+                            
+                            return `
+                                <tr class="${rowClass}">
+                                    <td class="position ${positionClass}">${index + 1}</td>
+                                    <td><strong>${team.teamName}</strong></td>
+                                    <td><strong>${team.score}</strong></td>
+                                    <td>${scoreboardData.totalRounds || 'N/A'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHtml;
+        }
+
+        function createConfetti() {
+            const celebration = document.getElementById('celebration');
+            const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                celebration.appendChild(confetti);
+            }
+        }
+
+        function goToScoreboard() {
+            if (gameCode && gameId) {
+                // Try to get the latest round ID
+                fetch(`http://localhost:4000/api/game-info/${gameCode}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.currentRoundId) {
+                            window.location.href = `scoreboard.html?gameCode=${gameCode}&roundId=${data.currentRoundId}&gameId=${gameId}`;
+                        } else {
+                            alert('No rounds found for this game');
+                        }
+                    })
+                    .catch(() => {
+                        alert('Could not load round information');
+                    });
+            } else {
+                showError('Cannot navigate to scoreboard: missing parameters');
+            }
+        }
+
+        function goToAdmin() {
+            window.location.href = 'admin.html';
+        }
+
+        function startNewGame() {
+            if (confirm('Are you sure you want to start a new game? This will clear the current game data.')) {
+                window.location.href = 'admin.html';
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('winner-content').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+    </script>
+</body>
+</html> 

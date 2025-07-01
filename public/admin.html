@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Team Game - Admin Panel</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 40px; 
+      background-color: #f8f9fa;
+    }
+    .admin-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .section { 
+      margin-bottom: 30px; 
+      padding: 20px; 
+      border: 1px solid #ddd; 
+      border-radius: 5px; 
+      background: white;
+    }
+    .section h2 {
+      color: #007bff;
+      margin-top: 0;
+    }
+    input, select, button { 
+      margin: 5px; 
+      padding: 10px; 
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    input, select {
+      width: 200px;
+    }
+    button { 
+      background-color: #007bff; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer;
+      padding: 10px 20px;
+    }
+    button:hover { background-color: #0056b3; }
+    button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+    .result { 
+      margin-top: 15px; 
+      padding: 15px; 
+      background-color: #f8f9fa; 
+      border-radius: 4px;
+      border-left: 4px solid #007bff;
+    }
+    .game-info { 
+      background-color: #e7f3ff; 
+      border: 1px solid #007bff; 
+      border-radius: 5px; 
+      padding: 15px; 
+      margin: 10px 0; 
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .status-waiting { background-color: #ffc107; color: #000; }
+    .status-in-progress { background-color: #28a745; color: white; }
+    .status-completed { background-color: #6c757d; color: white; }
+    .player-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      background: #f8f9fa;
+    }
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .team-card {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      background: #f8f9fa;
+    }
+    .team-card h4 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .origin-team {
+      border-color: #28a745;
+      background: #d4edda;
+    }
+    .nav-links {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #e9ecef;
+      border-radius: 5px;
+    }
+    .nav-links a {
+      color: #007bff;
+      text-decoration: none;
+      margin-right: 20px;
+    }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <h1>🎮 Team Game - Admin Panel</h1>
+    
+    <div class="nav-links">
+      <a href="index.html">← Back to Main Interface</a>
+      <button onclick="startNewGame()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 20px;">🆕 New Game</button>
+    </div>
+
+    <!-- Game Creation Section -->
+    <div class="section" id="gameCreationSection">
+      <h2>🚀 Create New Game</h2>
+      <div>
+        <input id="adminName" placeholder="Enter admin name" />
+        <input id="numTeams" type="number" min="2" max="10" value="2" placeholder="Number of teams (2-10)" />
+        <button onclick="createGame()">Create Game</button>
+      </div>
+      <div id="createResult" class="result"></div>
+    </div>
+
+    <!-- Game Management Section -->
+    <div class="section" id="gameManagementSection" style="display: none;">
+      <h2>⚙️ Game Management</h2>
+      <div id="gameStatus" class="game-info"></div>
+      
+      <!-- Player Management -->
+      <div id="playerManagement">
+        <h3>👥 Players</h3>
+        <div id="playerList" class="player-list"></div>
+        <button onclick="refreshPlayers()" id="refreshPlayersBtn">🔄 Refresh Players</button>
+      </div>
+
+      <!-- Game Actions -->
+      <div id="gameActions">
+        <h3>🎯 Game Actions</h3>
+        <button onclick="startGame()" id="startGameBtn">▶️ Start Game</button>
+        <button onclick="selectOriginTeam()" id="selectOriginBtn" style="display: none;">🎯 Select Origin Team</button>
+      </div>
+    </div>
+
+    <!-- Team Assignment Section -->
+    <div class="section" id="teamAssignmentSection" style="display: none;">
+      <h2>👥 Team Assignments</h2>
+      <div id="teamGrid" class="team-grid"></div>
+    </div>
+
+    <!-- Round Management Section -->
+    <div class="section" id="roundManagementSection" style="display: none;">
+      <h2>🔄 Round Management</h2>
+      <div id="currentRoundInfo"></div>
+      
+      <div id="roundActions">
+        <h3>Round Actions</h3>
+        <button onclick="setRoundPreferences()" id="setPrefsBtn">📝 Set Round Preferences</button>
+        <button onclick="viewScoreboard()" id="viewScoreboardBtn">📊 View Scoreboard</button>
+        <button onclick="viewWinner()" id="viewWinnerBtn">🏅 View Winner</button>
+      </div>
+
+      <!-- Round URLs Section -->
+      <div id="roundUrlsSection" style="display: none;">
+        <h3>🔗 Round URLs for Team Leads</h3>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;">
+          <!-- URLs will be dynamically added here -->
+        </div>
+      </div>
+
+      <!-- Round Progress Section -->
+      <div id="roundProgressSection" style="display: none;">
+        <h3>📊 Round Progress</h3>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;">
+          <div id="roundProgressContent">
+            <!-- Progress will be dynamically added here -->
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button onclick="refreshRoundProgress()" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">🔄 Refresh Progress</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Round Preferences Modal -->
+    <div id="preferencesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+        <h3>📝 Set Round Preferences</h3>
+        <div>
+          <label>Category:</label><br>
+          <input id="prefCategory" placeholder="e.g., Movies, Food, Books" />
+        </div>
+        <div>
+          <label>Items (one per line):</label><br>
+          <textarea id="prefItems" rows="5" placeholder="Enter items here..."></textarea>
+        </div>
+        <div style="margin-top: 20px;">
+          <button onclick="submitPreferences()">✅ Set Preferences</button>
+          <button onclick="closePreferencesModal()" style="background: #6c757d;">❌ Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentGame = null;
+    let currentRound = null;
+    let refreshInterval = null;
+
+    // Initialize admin panel
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if there's a game in localStorage
+      const savedGame = localStorage.getItem('adminGame');
+      console.log('Saved game from localStorage:', savedGame);
+      
+      if (savedGame) {
+        try {
+          currentGame = JSON.parse(savedGame);
+          console.log('Parsed current game:', currentGame);
+          
+          // Show both sections - admin can continue existing game or start new one
+          showGameManagement();
+          // Also show the creation section in case they want to start fresh
+          document.getElementById('gameCreationSection').style.display = 'block';
+        } catch (error) {
+          console.error('Error parsing saved game:', error);
+          localStorage.removeItem('adminGame');
+        }
+      }
+      
+      // Add page refresh warning
+      window.addEventListener('beforeunload', function(e) {
+        if (currentGame && currentGame.status !== 'waiting') {
+          e.preventDefault();
+          e.returnValue = '⚠️ Warning: Refreshing this page will lose your current game session. Are you sure you want to leave?';
+          return e.returnValue;
+        }
+      });
+    });
+
+    async function createGame() {
+      const adminName = document.getElementById('adminName').value;
+      const numTeams = parseInt(document.getElementById('numTeams').value);
+      
+      if (!adminName) {
+        showResult('createResult', 'Please enter an admin name', 'error');
+        return;
+      }
+      
+      if (!numTeams || numTeams < 2 || numTeams > 10) {
+        showResult('createResult', 'Please enter a valid number of teams (2-10)', 'error');
+        return;
+      }
+      
+      try {
+        const res = await fetch('http://localhost:4000/api/create-game', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminName, numTeams })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          currentGame = data;
+          localStorage.setItem('adminGame', JSON.stringify(currentGame));
+          showResult('createResult', `
+            <div class="game-info">
+              <div><strong>✅ Game Created Successfully!</strong></div>
+              <div><strong>Game ID:</strong> ${data.gameId}</div>
+              <div><strong>Game Code:</strong> <span style="background: yellow; padding: 2px; font-weight: bold;">${data.gameCode}</span></div>
+              <div><strong>Admin:</strong> ${data.adminName}</div>
+              <div><strong>Number of Teams:</strong> ${data.numTeams}</div>
+              <div><strong>Status:</strong> <span class="status-badge status-waiting">${data.status}</span></div>
+            </div>
+          `);
+          showGameManagement();
+        } else {
+          showResult('createResult', `Error: ${data.error}`, 'error');
+        }
+      } catch (error) {
+        showResult('createResult', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    function showGameManagement() {
+      document.getElementById('gameManagementSection').style.display = 'block';
+      document.getElementById('gameCreationSection').style.display = 'none';
+      updateGameStatus();
+      startPlayerRefresh();
+    }
+
+    function updateGameStatus() {
+      if (!currentGame) return;
+      
+      const statusBadge = `<span class="status-badge status-${currentGame.status.replace('_', '-')}">${currentGame.status}</span>`;
+      
+      document.getElementById('gameStatus').innerHTML = `
+        <div><strong>Game ID:</strong> ${currentGame.gameId}</div>
+        <div><strong>Game Code:</strong> ${currentGame.gameCode}</div>
+        <div><strong>Status:</strong> ${statusBadge}</div>
+        <div><strong>Teams:</strong> ${currentGame.numTeams}</div>
+      `;
+    }
+
+    async function refreshPlayers() {
+      if (!currentGame) return;
+      
+      try {
+        const res = await fetch(`http://localhost:4000/api/game-info/${currentGame.gameCode}`);
+        const data = await res.json();
+        
+        if (res.ok) {
+          currentGame.playerCount = data.playerCount;
+          localStorage.setItem('adminGame', JSON.stringify(currentGame));
+          
+          // Get detailed player list
+          const playerList = await getPlayerList();
+          console.log('Player list received:', playerList); // Debug log
+          displayPlayers(playerList);
+          
+          // Enable start game if we have players
+          const startBtn = document.getElementById('startGameBtn');
+          startBtn.disabled = data.playerCount === 0;
+          startBtn.textContent = data.playerCount === 0 ? '⏸️ No Players Yet' : `▶️ Start Game (${data.playerCount} players)`;
+        }
+      } catch (error) {
+        console.error('Error refreshing players:', error);
+      }
+    }
+
+    async function getPlayerList() {
+      if (!currentGame) {
+        console.log('No current game, returning empty array'); // Debug log
+        return [];
+      }
+      
+      try {
+        console.log('Fetching players for game:', currentGame.gameCode); // Debug log
+        const res = await fetch(`http://localhost:4000/api/game-players/${currentGame.gameCode}`);
+        const data = await res.json();
+        
+        console.log('API response:', data); // Debug log
+        
+        if (res.ok) {
+          return data.players || [];
+        } else {
+          console.error('Error fetching players:', data.error);
+          return [];
+        }
+      } catch (error) {
+        console.error('Error fetching players:', error);
+        return [];
+      }
+    }
+
+    function displayPlayers(players) {
+      console.log('Displaying players:', players); // Debug log
+      const playerListDiv = document.getElementById('playerList');
+      if (players.length === 0) {
+        playerListDiv.innerHTML = '<div>No players have joined yet. Share the game code with players!</div>';
+      } else {
+        playerListDiv.innerHTML = players.map(player => {
+          const teamInfo = player.teamId ? ` (Team: ${player.teamId})` : ' (Not assigned yet)';
+          const joinTime = new Date(player.joinedAt).toLocaleTimeString();
+          return `<div>👤 ${player.playerName}${teamInfo} - Joined: ${joinTime}</div>`;
+        }).join('');
+      }
+    }
+
+    function startPlayerRefresh() {
+      // Refresh players every 5 seconds
+      refreshPlayers();
+      refreshInterval = setInterval(refreshPlayers, 5000);
+    }
+
+    async function startGame() {
+      if (!currentGame) return;
+      
+      try {
+        const res = await fetch('http://localhost:4000/api/start-game', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gameId: currentGame.gameId })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          currentGame.status = 'in_progress';
+          currentGame.teams = data.teams;
+          localStorage.setItem('adminGame', JSON.stringify(currentGame));
+          
+          updateGameStatus();
+          await displayTeams(data.teams);
+          document.getElementById('selectOriginBtn').style.display = 'inline-block';
+          document.getElementById('teamAssignmentSection').style.display = 'block';
+          
+          showResult('gameStatus', `
+            <div class="game-info">
+              <div><strong>🎉 Game Started!</strong></div>
+              <div><strong>Message:</strong> ${data.message}</div>
+              <div><strong>Distribution:</strong></div>
+              <div>- Total Players: ${data.distribution.totalPlayers}</div>
+              <div>- Number of Teams: ${data.distribution.numTeams}</div>
+              <div>- Base Team Size: ${data.distribution.baseTeamSize}</div>
+              <div>- Extra Players: ${data.distribution.remainder}</div>
+            </div>
+          `);
+        } else {
+          showResult('gameStatus', `Error: ${data.error}`, 'error');
+        }
+      } catch (error) {
+        showResult('gameStatus', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function displayTeams(teams) {
+      const teamGrid = document.getElementById('teamGrid');
+      
+      // Create team cards with lead names
+      const teamCards = await Promise.all(teams.map(async (team) => {
+        let leadName = team.leadId; // Default to ID if we can't get the name
+        
+        // Try to get the lead's name
+        if (team.leadId) {
+          try {
+            const res = await fetch(`http://localhost:4000/api/player-info/${team.leadId}`);
+            const playerData = await res.json();
+            if (res.ok && playerData.playerName) {
+              leadName = playerData.playerName;
+            }
+          } catch (error) {
+            console.error('Error fetching lead name:', error);
+          }
+        }
+        
+        return `
+          <div class="team-card" data-team-id="${team.teamId}">
+            <h4>${team.name}</h4>
+            <div><strong>Players:</strong> ${team.playerIds.length}</div>
+            <div><strong>Team Lead:</strong> ${leadName}</div>
+            <div><strong>Score:</strong> ${team.score}</div>
+          </div>
+        `;
+      }));
+      
+      teamGrid.innerHTML = teamCards.join('');
+    }
+
+    async function selectOriginTeam() {
+      if (!currentGame || !currentGame.teams) return;
+      
+              const teamId = prompt('Enter team ID to select as origin team (e.g., team_1, team_2):');
+      if (!teamId) return;
+      
+      try {
+        const res = await fetch('http://localhost:4000/api/select-origin-team', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ gameId: currentGame.gameId, teamId })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          currentRound = data.round;
+          localStorage.setItem('adminRound', JSON.stringify(currentRound));
+          
+          // Update team display to show origin team
+          document.querySelectorAll('.team-card').forEach(card => {
+            card.classList.remove('origin-team');
+            if (card.dataset.teamId === teamId) {
+              card.classList.add('origin-team');
+              card.innerHTML += '<div><strong>🎯 ORIGIN TEAM</strong></div>';
+            }
+          });
+          
+          document.getElementById('roundManagementSection').style.display = 'block';
+          updateCurrentRoundInfo();
+          
+          showResult('currentRoundInfo', `
+            <div class="game-info">
+              <div><strong>🎯 Origin Team Selected!</strong></div>
+              <div><strong>Round ID:</strong> ${data.round.roundId}</div>
+              <div><strong>Origin Team:</strong> ${teamId}</div>
+              <div><strong>Status:</strong> ${data.round.status}</div>
+              <div><strong>Message:</strong> ${data.message}</div>
+            </div>
+          `);
+        } else {
+          showResult('currentRoundInfo', `Error: ${data.error}`, 'error');
+        }
+      } catch (error) {
+        showResult('currentRoundInfo', `Error: ${error.message}`, 'error');
+      }
+    }
+
+    function updateCurrentRoundInfo() {
+      if (!currentRound) return;
+      
+      document.getElementById('currentRoundInfo').innerHTML = `
+        <div class="game-info">
+          <div><strong>Current Round:</strong> ${currentRound.roundId}</div>
+          <div><strong>Origin Team:</strong> ${currentRound.originTeamId}</div>
+          <div><strong>Status:</strong> ${currentRound.status}</div>
+          <div><strong>Category:</strong> ${currentRound.category || 'Not set'}</div>
+          <div><strong>Items:</strong> ${currentRound.items.length > 0 ? currentRound.items.join(', ') : 'Not set'}</div>
+        </div>
+      `;
+    }
+
+    function setRoundPreferences() {
+      document.getElementById('preferencesModal').style.display = 'block';
+    }
+
+    function closePreferencesModal() {
+      document.getElementById('preferencesModal').style.display = 'none';
+    }
+
+    async function submitPreferences() {
+      if (!currentRound) return;
+      
+      const category = document.getElementById('prefCategory').value;
+      const itemsText = document.getElementById('prefItems').value;
+      
+      if (!category || !itemsText) {
+        alert('Please enter both category and items');
+        return;
+      }
+      
+      // Handle both newline-separated and comma-separated items
+      let items;
+      if (itemsText.includes('\n')) {
+        // Split by newlines
+        items = itemsText.split('\n').map(item => item.trim()).filter(item => item.length > 0);
+      } else {
+        // Split by commas
+        items = itemsText.split(',').map(item => item.trim()).filter(item => item.length > 0);
+      }
+      
+      // Ensure we have at least 4 items
+      if (items.length < 4) {
+        alert('Please enter at least 4 items');
+        return;
+      }
+      
+      // Limit to first 4 items if more are provided
+      items = items.slice(0, 4);
+      
+      try {
+        const res = await fetch('http://localhost:4000/api/set-round-preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roundId: currentRound.roundId, category, items })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+          currentRound = data.round;
+          localStorage.setItem('adminRound', JSON.stringify(currentRound));
+          updateCurrentRoundInfo();
+          closePreferencesModal();
+          
+          // Generate round URLs for team leads
+          generateRoundUrls();
+          
+          // Start tracking round progress
+          startRoundProgressTracking();
+          
+          showResult('currentRoundInfo', `
+            <div class="game-info">
+              <div><strong>✅ Round Preferences Set!</strong></div>
+              <div><strong>Category:</strong> ${data.round.category}</div>
+              <div><strong>Items:</strong> ${data.round.items.join(', ')}</div>
+              <div><strong>Status:</strong> ${data.round.status}</div>
+              <div><strong>Message:</strong> ${data.message}</div>
+            </div>
+          `);
+        } else {
+          alert(`Error: ${data.error}`);
+        }
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    async function refreshTeamData() {
+      if (!currentGame) return;
+      
+      try {
+        const res = await fetch(`http://localhost:4000/api/game-info/${currentGame.gameCode}`);
+        const data = await res.json();
+        
+        if (res.ok && data.teams) {
+          currentGame.teams = data.teams;
+          localStorage.setItem('adminGame', JSON.stringify(currentGame));
+          console.log('Refreshed team data:', currentGame.teams);
+          return true;
+        }
+      } catch (error) {
+        console.error('Error refreshing team data:', error);
+      }
+      return false;
+    }
+
+    async function generateRoundUrls() {
+      if (!currentRound || !currentGame) return;
+      
+      // Try to refresh team data first
+      if (!currentGame.teams) {
+        await refreshTeamData();
+      }
+      
+      if (!currentGame.teams) {
+        console.error('No team data available');
+        return;
+      }
+      
+      try {
+        console.log('Generating round URLs with teams:', currentGame.teams);
+        
+        const roundUrls = [];
+        
+        for (const team of currentGame.teams) {
+          console.log('Processing team:', team);
+          if (team.leadId) {
+            const roundUrl = `http://localhost:4000/round.html?gameCode=${currentGame.gameCode}&roundId=${currentRound.roundId}&playerId=${team.leadId}`;
+            roundUrls.push({
+              teamId: team.teamId,
+              teamName: team.name,
+              leadId: team.leadId,
+              url: roundUrl
+            });
+            console.log('Generated URL for team', team.teamId, ':', roundUrl);
+          } else {
+            console.log('No leadId for team:', team);
+          }
+        }
+        
+        // Display the URLs
+        const urlSection = document.getElementById('roundUrlsSection');
+        if (urlSection) {
+          urlSection.style.display = 'block';
+          urlSection.innerHTML = `
+            <h3>🔗 Round URLs for Team Leads</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;">
+              ${roundUrls.map(team => `
+                <div style="margin-bottom: 15px; padding: 10px; background: white; border-radius: 5px; border: 1px solid #ddd;">
+                  <div><strong>${team.teamName} (${team.teamId})</strong></div>
+                  <div style="font-size: 0.9em; color: #666; margin: 5px 0;">Lead: ${team.leadId}</div>
+                  <div style="margin-top: 8px;">
+                    <a href="${team.url}" target="_blank" style="display: inline-block; padding: 8px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em; margin-right: 8px;">🎮 Open Round Page</a>
+                    <button onclick="copyToClipboard('${team.url}')" style="padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em;">📋 Copy URL</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Error generating round URLs:', error);
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('URL copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('URL copied to clipboard!');
+      });
+    }
+
+
+
+    function viewScoreboard() {
+      if (!currentRound || !currentGame) {
+        alert('No active round or game found');
+        return;
+      }
+      
+      const scoreboardUrl = `scoreboard.html?gameCode=${currentGame.gameCode}&roundId=${currentRound.roundId}&gameId=${currentGame.gameId}`;
+      window.open(scoreboardUrl, '_blank');
+    }
+
+    function viewWinner() {
+      if (!currentGame) {
+        alert('No active game found');
+        return;
+      }
+      
+      // Debug logging
+      console.log('Current game data:', currentGame);
+      
+      if (!currentGame.gameCode) {
+        alert('Game code is missing. Please refresh the page and try again.');
+        return;
+      }
+      
+      let winnerUrl;
+      if (currentGame.gameId) {
+        winnerUrl = `winner.html?gameCode=${currentGame.gameCode}&gameId=${currentGame.gameId}`;
+      } else {
+        // Fallback: use only gameCode, let the winner page fetch gameId
+        console.log('GameId missing, using gameCode fallback');
+        winnerUrl = `winner.html?gameCode=${currentGame.gameCode}`;
+      }
+      
+      console.log('Opening winner URL:', winnerUrl);
+      window.open(winnerUrl, '_blank');
+    }
+
+
+
+    function showResult(elementId, message, type = 'success') {
+      const element = document.getElementById(elementId);
+      if (type === 'error') {
+        element.innerHTML = `<div style="color: red;">${message}</div>`;
+      } else {
+        element.innerHTML = message;
+      }
+    }
+
+    function startNewGame() {
+      // Clear localStorage and reset to creation view
+      localStorage.removeItem('adminGame');
+      localStorage.removeItem('adminRound');
+      currentGame = null;
+      currentRound = null;
+      
+      // Stop any refresh intervals
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+      }
+      
+      // Show creation section, hide management
+      document.getElementById('gameCreationSection').style.display = 'block';
+      document.getElementById('gameManagementSection').style.display = 'none';
+      document.getElementById('teamAssignmentSection').style.display = 'none';
+      document.getElementById('roundManagementSection').style.display = 'none';
+      
+      // Clear any results
+      document.getElementById('createResult').innerHTML = '';
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+
+    async function refreshRoundProgress() {
+      if (!currentRound) return;
+      
+      try {
+        const res = await fetch(`http://localhost:4000/api/round-info/${currentRound.roundId}`);
+        const roundData = await res.json();
+        
+        if (res.ok) {
+          displayRoundProgress(roundData);
+        } else {
+          console.error('Error fetching round progress:', roundData.error);
+        }
+      } catch (error) {
+        console.error('Error refreshing round progress:', error);
+      }
+    }
+
+    function displayRoundProgress(roundData) {
+      const progressSection = document.getElementById('roundProgressSection');
+      const progressContent = document.getElementById('roundProgressContent');
+      
+      if (!progressSection || !progressContent) return;
+      
+      progressSection.style.display = 'block';
+      
+      // Get origin team info
+      const originTeamId = roundData.originTeamId;
+      const originTeam = currentGame.teams.find(t => t.teamId === originTeamId);
+      const originTeamName = originTeam ? originTeam.name : originTeamId;
+      
+      // Check origin team submission
+      const originSubmitted = roundData.originRanking && roundData.originRanking.length > 0;
+      
+      // Count guessing teams and their attempts
+      const guessingTeams = currentGame.teams.filter(t => t.teamId !== originTeamId);
+      const teamProgress = guessingTeams.map(team => {
+        const teamGuesses = roundData.guesses ? roundData.guesses.filter(g => g.teamId === team.teamId) : [];
+        const attemptsUsed = teamGuesses.length;
+        const maxAttempts = 3;
+        const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed);
+        
+        return {
+          teamId: team.teamId,
+          teamName: team.name,
+          attemptsUsed,
+          attemptsRemaining,
+          maxAttempts,
+          isComplete: attemptsRemaining === 0
+        };
+      });
+      
+      // Calculate overall progress
+      const totalTeams = guessingTeams.length + 1; // +1 for origin team
+      const completedTeams = (originSubmitted ? 1 : 0) + teamProgress.filter(t => t.isComplete).length;
+      const progressPercentage = Math.round((completedTeams / totalTeams) * 100);
+      
+      // Build progress HTML
+      let progressHtml = `
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong>Overall Progress: ${completedTeams}/${totalTeams} teams complete</strong>
+            <span style="font-size: 1.2em; font-weight: bold; color: ${progressPercentage === 100 ? '#28a745' : '#007bff'};">
+              ${progressPercentage}%
+            </span>
+          </div>
+          <div style="background: #e9ecef; border-radius: 10px; height: 20px; overflow: hidden;">
+            <div style="background: ${progressPercentage === 100 ? '#28a745' : '#007bff'}; height: 100%; width: ${progressPercentage}%; transition: width 0.3s;"></div>
+          </div>
+        </div>
+      `;
+      
+      // Origin team status
+      progressHtml += `
+        <div style="margin-bottom: 15px; padding: 10px; background: ${originSubmitted ? '#d4edda' : '#fff3cd'}; border: 1px solid ${originSubmitted ? '#c3e6cb' : '#ffeaa7'}; border-radius: 5px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>🎯 Origin Team: ${originTeamName}</strong>
+              <div style="font-size: 0.9em; color: #666;">
+                ${originSubmitted ? '✅ Ranking submitted' : '⏳ Waiting for ranking'}
+              </div>
+            </div>
+            <span style="font-size: 1.5em;">${originSubmitted ? '✅' : '⏳'}</span>
+          </div>
+        </div>
+      `;
+      
+      // Guessing teams status
+      progressHtml += '<div style="margin-bottom: 10px;"><strong>🔍 Guessing Teams:</strong></div>';
+      
+      teamProgress.forEach(team => {
+        const statusColor = team.isComplete ? '#d4edda' : '#e7f3ff';
+        const statusBorder = team.isComplete ? '#c3e6cb' : '#b3d9ff';
+        const statusIcon = team.isComplete ? '✅' : '🔄';
+        
+        progressHtml += `
+          <div style="margin-bottom: 8px; padding: 8px; background: ${statusColor}; border: 1px solid ${statusBorder}; border-radius: 5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>${team.teamName}</strong>
+                <div style="font-size: 0.9em; color: #666;">
+                  ${team.attemptsUsed}/${team.maxAttempts} attempts used
+                  ${team.attemptsRemaining > 0 ? `(${team.attemptsRemaining} remaining)` : ''}
+                </div>
+              </div>
+              <span style="font-size: 1.2em;">${statusIcon}</span>
+            </div>
+          </div>
+        `;
+      });
+      
+      progressContent.innerHTML = progressHtml;
+    }
+
+    function startRoundProgressTracking() {
+      // Show progress section
+      const progressSection = document.getElementById('roundProgressSection');
+      if (progressSection) {
+        progressSection.style.display = 'block';
+      }
+      
+      // Initial load
+      refreshRoundProgress();
+      
+      // Auto-refresh every 10 seconds
+      if (window.roundProgressInterval) {
+        clearInterval(window.roundProgressInterval);
+      }
+      window.roundProgressInterval = setInterval(refreshRoundProgress, 10000);
+    }
+
+
+  </script>
+</body>
+</html> 

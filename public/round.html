@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Team Game - Round Interaction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f8f9fa; }
+    .container { max-width: 700px; margin: 30px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 32px; }
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h1 { margin: 0 0 8px 0; font-size: 2em; }
+    .info-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; background: #e7f3ff; border-radius: 8px; padding: 12px 18px; margin-bottom: 18px; border: 1px solid #007bff22; }
+    .badge { display: inline-block; padding: 6px 16px; border-radius: 16px; font-weight: bold; font-size: 13px; margin-right: 8px; }
+    .badge.origin { background: #28a745; color: #fff; }
+    .badge.guessing { background: #ffc107; color: #222; }
+    .badge.lead { background: #007bff; color: #fff; }
+    .badge.member { background: #6c757d; color: #fff; }
+    .section { margin-bottom: 28px; padding: 20px; border-radius: 8px; background: #f8f9fa; border: 1px solid #eee; }
+    .section h2 { margin-top: 0; color: #007bff; font-size: 1.2em; }
+    .origin-info { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 12px 18px; margin-bottom: 12px; }
+    .category { background: linear-gradient(90deg,#667eea,#764ba2); color: #fff; border-radius: 8px; padding: 16px; text-align: center; font-size: 1.2em; margin-bottom: 18px; }
+    .items-list { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 18px; }
+    .item-card { background: #f1f3f6; border: 2px solid #ddd; border-radius: 8px; padding: 14px 18px; min-width: 120px; text-align: center; font-size: 1.1em; cursor: move; transition: box-shadow .2s; }
+    .item-card.dragging { opacity: 0.5; box-shadow: 0 0 8px #007bff55; }
+    .ranking-area { margin: 18px 0; }
+    .ranking-row { display: flex; align-items: center; margin-bottom: 10px; }
+    .rank-label { width: 110px; font-weight: bold; color: #007bff; }
+    .rank-slot { flex: 1; min-height: 40px; border: 2px dashed #bbb; border-radius: 6px; background: #fff; margin-left: 10px; display: flex; align-items: center; justify-content: center; transition: border-color .2s, background .2s; }
+    .rank-slot.filled { border-color: #28a745; background: #eafbe7; }
+    .rank-slot.drag-over { border-color: #007bff; background: #e7f3ff; }
+    .actions { text-align: center; margin-top: 18px; }
+    .btn { padding: 10px 28px; border-radius: 6px; border: none; font-size: 1em; font-weight: bold; margin: 0 8px; cursor: pointer; transition: background .2s; }
+    .btn-primary { background: #007bff; color: #fff; }
+    .btn-primary:disabled { background: #6c757d; cursor: not-allowed; }
+    .btn-secondary { background: #6c757d; color: #fff; }
+    .status { margin: 18px 0 0 0; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; }
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    .attempts { background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 10px 16px; margin-bottom: 10px; text-align: center; }
+    .prev-guesses { margin-top: 10px; }
+    .prev-guesses h4 { margin: 0 0 6px 0; }
+    .guess-row { background: #f8f9fa; border: 1px solid #eee; border-radius: 5px; padding: 8px 12px; margin-bottom: 6px; }
+    @media (max-width: 600px) { .container { padding: 10px; } .items-list { flex-direction: column; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Team Game Round</h1>
+      <div style="font-size:1.1em;color:#555;">Rank items or guess the origin team's ranking</div>
+    </div>
+    <div class="info-bar">
+      <div>
+        <span id="gameCode">Game: ...</span> | <span id="roundId">Round: ...</span>
+      </div>
+      <div>
+        <span id="teamBadge" class="badge">...</span>
+        <span id="roleBadge" class="badge">...</span>
+      </div>
+    </div>
+    <div class="section origin-info" id="originTeamInfo">Loading origin team info...</div>
+    <div class="section category" id="categorySection">Loading category...</div>
+    <div class="section" id="itemsSection">
+      <div class="items-list" id="itemsList"></div>
+    </div>
+    <div class="section" id="originRankingSection" style="display:none;">
+      <h2>🎯 Origin Team: Rank Your Preferences</h2>
+      <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+        <strong>Instructions:</strong> Drag and drop the items below to rank them from your team's most preferred (1st) to least preferred (4th). 
+        This ranking will be used by other teams to guess your preferences.
+      </div>
+      <div class="ranking-area" id="originRankingArea"></div>
+      <div class="actions">
+        <button class="btn btn-primary" id="submitOriginBtn" onclick="submitOriginRanking()">Submit Ranking</button>
+        <button class="btn btn-secondary" onclick="resetOriginRanking()">Reset</button>
+      </div>
+    </div>
+    <div class="section" id="guessingSection" style="display:none;">
+      <h2>🔍 Guess the Origin Team's Ranking</h2>
+      <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+        <strong>Instructions:</strong> Drag and drop the items to guess how the origin team ranked them from most preferred (1st) to least preferred (4th). 
+        You have <strong>3 attempts</strong> to get the highest score possible!
+      </div>
+      <div class="attempts">Attempts Remaining: <span id="attemptsLeft">3</span></div>
+      <div class="ranking-area" id="guessRankingArea"></div>
+      <div class="actions">
+        <button class="btn btn-primary" id="submitGuessBtn" onclick="submitGuess()">Submit Guess</button>
+        <button class="btn btn-secondary" onclick="resetGuessRanking()">Reset</button>
+      </div>
+      <div class="prev-guesses" id="prevGuesses" style="display:none;"></div>
+    </div>
+    <div id="statusMsg" class="status" style="display:none;"></div>
+  </div>
+  <script>
+    // --- State ---
+    let round = null, player = null, team = null, isOrigin = false, isLead = false, attempts = 3, prevGuesses = [], originSubmitted = false;
+    let items = [];
+    let scoreRefreshInterval = null;
+    
+    // --- Helpers ---
+    function qs(id) { return document.getElementById(id); }
+    function showStatus(msg, type) {
+      const el = qs('statusMsg');
+      el.textContent = msg; el.className = 'status ' + type; el.style.display = '';
+      setTimeout(()=>{ el.style.display='none'; }, 5000);
+    }
+    function getParams() {
+      const p = new URLSearchParams(window.location.search);
+      return { gameCode: p.get('gameCode'), roundId: p.get('roundId'), playerId: p.get('playerId') };
+    }
+    
+    // --- Score Refresh for Guessing Teams ---
+    // Removed - now only available on admin page
+    
+    function startScoreRefresh() {
+      // Removed auto-refresh - now only manual refresh
+    }
+    
+    function stopScoreRefresh() {
+      if (scoreRefreshInterval) {
+        clearInterval(scoreRefreshInterval);
+        scoreRefreshInterval = null;
+      }
+    }
+    
+    // --- Init ---
+    window.addEventListener('DOMContentLoaded', async ()=>{
+      const {gameCode, roundId, playerId} = getParams();
+      if (!gameCode || !roundId || !playerId) { showStatus('Missing URL params','error'); return; }
+      try {
+        // Load round
+        let rRes = await fetch(`/api/round-info/${roundId}`); round = await rRes.json();
+        if (!rRes.ok) throw new Error(round.error||'Round not found');
+        
+        // Load player
+        let pRes = await fetch(`/api/player-info/${playerId}`); player = await pRes.json();
+        if (!pRes.ok) throw new Error(player.error||'Player not found');
+        
+        // Check if player has a team assignment
+        if (!player.teamId) {
+          showStatus('You have not been assigned to a team yet. Please wait for the admin to start the game or refresh the join page.', 'warning');
+          return;
+        }
+        
+        // Load team - use gameCode directly
+        let tRes = await fetch(`/api/team-details/${gameCode}/${player.teamId}`); 
+        team = await tRes.json();
+        if (!tRes.ok) throw new Error(team.error||'Team not found');
+        
+        // Category & items
+        qs('categorySection').textContent = round.category || 'Category not set yet';
+        items = round.items || [];
+        renderItems();
+        
+        // Info bar
+        qs('gameCode').textContent = 'Game: ' + (round.gameCode||'');
+        qs('roundId').textContent = 'Round: ' + (round.roundId||'');
+        
+        // Badges
+        isOrigin = (team.teamId === round.originTeamId);
+        isLead = (player.playerId === team.leadId);
+        qs('teamBadge').textContent = isOrigin ? 'Origin Team' : 'Guessing Team';
+        qs('teamBadge').className = 'badge ' + (isOrigin ? 'origin' : 'guessing');
+        qs('roleBadge').textContent = isLead ? 'Team Lead' : 'Team Member';
+        qs('roleBadge').className = 'badge ' + (isLead ? 'lead' : 'member');
+        
+        // Show correct UI
+        if (isOrigin && isLead) { 
+          qs('originRankingSection').style.display=''; 
+          renderRanking('originRankingArea', items, 'origin'); 
+          
+          // Hide origin team info for origin team
+          qs('originTeamInfo').style.display = 'none';
+          
+          // Check if origin team has already submitted
+          if (round.originRanking && round.originRanking.length > 0) {
+            originSubmitted = true;
+            qs('submitOriginBtn').disabled = true;
+            qs('submitOriginBtn').textContent = '✅ Ranking Submitted';
+            showStatus('Origin team ranking already submitted!', 'info');
+          }
+        }
+        else if (!isOrigin && isLead) { 
+          qs('guessingSection').style.display = ''; 
+          renderRanking('guessRankingArea', items, 'guess'); 
+          loadPrevGuesses();
+          
+          // Load origin team info for guessing teams
+          let oRes = await fetch(`/api/origin-team-info/${roundId}`); 
+          let oData = await oRes.json();
+          if (oRes.ok && oData.originTeam) {
+            qs('originTeamInfo').innerHTML = `<b>Origin Team:</b> ${oData.originTeam.teamName} | <b>Lead:</b> ${oData.originTeam.leadName} | <b>Members:</b> ${oData.originTeam.memberNames.join(', ')}`;
+            qs('originTeamInfo').style.display = 'block';
+          } else { 
+            qs('originTeamInfo').textContent = 'Could not load origin team info.';
+            qs('originTeamInfo').style.display = 'block';
+          }
+          
+          // Removed auto-refresh - now only manual refresh
+        }
+        else { 
+          showStatus('You are a team member. Only team leads can submit rankings/guesses.','warning'); 
+        }
+      } catch(e) { showStatus(e.message,'error'); }
+    });
+    
+    // Clean up intervals when page is unloaded
+    window.addEventListener('beforeunload', () => {
+      // No longer needed since we removed auto-refresh
+    });
+    
+    // --- Render Items ---
+    function renderItems() {
+      const list = qs('itemsList'); list.innerHTML = '';
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item-card';
+        div.textContent = item;
+        list.appendChild(div);
+      });
+    }
+    // --- Ranking UI ---
+    function renderRanking(areaId, items, mode) {
+      const area = qs(areaId); area.innerHTML = '';
+      const ranks = ['1st','2nd','3rd','4th'];
+      for (let i=0; i<4; ++i) {
+        const row = document.createElement('div'); row.className = 'ranking-row';
+        const label = document.createElement('div'); label.className = 'rank-label'; label.textContent = ranks[i];
+        const slot = document.createElement('div'); slot.className = 'rank-slot'; slot.dataset.rank = i;
+        slot.addEventListener('dragover', e=>{e.preventDefault(); slot.classList.add('drag-over');});
+        slot.addEventListener('dragleave', ()=>slot.classList.remove('drag-over'));
+        slot.addEventListener('drop', e=>{
+          e.preventDefault(); slot.classList.remove('drag-over');
+          const data = e.dataTransfer.getData('text/plain');
+          slot.textContent = data; slot.classList.add('filled'); slot.dataset.item = data;
+        });
+        row.appendChild(label); row.appendChild(slot); area.appendChild(row);
+      }
+      // Draggable items
+      const itemCards = document.querySelectorAll('.item-card');
+      itemCards.forEach(card => {
+        card.draggable = true;
+        card.addEventListener('dragstart', e=>{ card.classList.add('dragging'); e.dataTransfer.setData('text/plain', card.textContent); });
+        card.addEventListener('dragend', e=>{ card.classList.remove('dragging'); });
+      });
+    }
+    function getRanking(areaId) {
+      const slots = qs(areaId).querySelectorAll('.rank-slot');
+      return Array.from(slots).map(s=>s.dataset.item).filter(Boolean);
+    }
+    function resetOriginRanking() { renderRanking('originRankingArea', items, 'origin'); }
+    function resetGuessRanking() { renderRanking('guessRankingArea', items, 'guess'); }
+    // --- Submit Origin Ranking ---
+    async function submitOriginRanking() {
+      if (originSubmitted) return showStatus('Already submitted!','warning');
+      
+      const ranking = getRanking('originRankingArea');
+      if (ranking.length !== 4) {
+        showStatus('Please rank all 4 items.','error');
+        return;
+      }
+      
+      // Validate unique items
+      const unique = new Set(ranking);
+      if (unique.size !== 4) {
+        showStatus('Each item must be unique.','error');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/submit-origin-ranking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            roundId: round.roundId, 
+            teamId: team.teamId, 
+            orderedItems: ranking 
+          })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+          originSubmitted = true;
+          qs('submitOriginBtn').disabled = true;
+          qs('submitOriginBtn').textContent = '✅ Ranking Submitted';
+          showStatus('Origin team ranking submitted successfully!','success');
+        } else {
+          showStatus(data.error || 'Error submitting ranking','error');
+        }
+      } catch(e) { 
+        showStatus('Network error: ' + e.message,'error'); 
+      }
+    }
+    // --- Guessing Team ---
+    async function submitGuess() {
+      if (attempts <= 0) {
+        showStatus('No attempts left!','error');
+        return;
+      }
+      
+      const ranking = getRanking('guessRankingArea');
+      if (ranking.length !== 4) {
+        showStatus('Please rank all 4 items.','error');
+        return;
+      }
+      
+      // Validate unique items
+      const unique = new Set(ranking);
+      if (unique.size !== 4) {
+        showStatus('Each item must be unique.','error');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/submit-guess', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            roundId: round.roundId, 
+            teamId: team.teamId, 
+            guess: ranking 
+          })
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+          attempts--;
+          qs('attemptsLeft').textContent = attempts;
+          
+          // Add to previous guesses
+          const newGuess = {
+            ranking: [...ranking], // Copy the array
+            timestamp: new Date().toLocaleTimeString()
+          };
+          prevGuesses.push(newGuess);
+          
+          // Update round data to include the new guess
+          if (!round.guesses) round.guesses = [];
+          round.guesses.push({
+            teamId: team.teamId,
+            guess: ranking
+          });
+          
+          showPrevGuesses();
+          
+          if (attempts <= 0) {
+            qs('submitGuessBtn').disabled = true;
+            qs('submitGuessBtn').textContent = 'No Attempts Left';
+          }
+          
+          showStatus(`Guess submitted! Attempts remaining: ${attempts}`, 'success');
+          
+          // Reset the ranking area for next attempt
+          if (attempts > 0) {
+            resetGuessRanking();
+          }
+        } else {
+          showStatus(data.error || 'Error submitting guess','error');
+        }
+      } catch(e) { 
+        showStatus('Network error: ' + e.message,'error'); 
+      }
+    }
+    function loadPrevGuesses() { 
+      // Load existing guesses from round data
+      if (round.guesses) {
+        const teamGuesses = round.guesses.filter(g => g.teamId === team.teamId);
+        prevGuesses = teamGuesses.map((guess, index) => ({
+          ranking: guess.guess,
+          timestamp: guess.timestamp || (guess.createdAt ? new Date(guess.createdAt).toLocaleTimeString() : new Date().toLocaleTimeString())
+        }));
+      } else {
+        prevGuesses = [];
+      }
+      showPrevGuesses(); 
+    }
+    
+    function showPrevGuesses() {
+      if (prevGuesses.length === 0) return;
+      
+      const div = qs('prevGuesses'); 
+      div.style.display = 'block';
+      
+      div.innerHTML = '<h4>Previous Guesses</h4>' + 
+        prevGuesses.map((g, i) => 
+          `<div class='guess-row'>
+            <b>Attempt ${i+1}:</b> ${g.ranking.join(' → ')} 
+            <span style='color:#666;font-size:0.9em;'>${g.timestamp}</span>
+          </div>`
+        ).join('');
+    }
+  </script>
+</body>
+</html> 
