@@ -1,4 +1,6 @@
 const express = require('express');
+const resetGameData = require('./resetData');
+resetGameData(); // 💣 Clears data on every server restart
 const cors = require('cors');
 const path = require('path');
 const gameRoutes = require('./routes/gameRoutes');
