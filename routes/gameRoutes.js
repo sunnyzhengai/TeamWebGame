@@ -301,6 +301,24 @@ router.get('/scoreboard/:gameId', (req, res) => {
 router.get('/declare-winner/:gameId', (req, res) => {
   try {
     const { gameId } = req.params;
+    
+    // Add debugging logs
+    console.log(`🏆 [Declare Winner] Request for gameId: ${gameId}`);
+    console.log(`   - Total games in memory: ${Object.keys(games).length}`);
+    console.log(`   - Available game IDs: ${Object.keys(games)}`);
+    
+    if (!games[gameId]) {
+      console.log(`   ❌ Game ${gameId} not found in memory`);
+      return res.status(404).json({ 
+        error: 'Game not found',
+        debug: {
+          requestedGameId: gameId,
+          availableGames: Object.keys(games),
+          totalGames: Object.keys(games).length
+        }
+      });
+    }
+    
     const result = declare_winner(gameId);
     
     // Handle case when there are no scores yet
@@ -322,6 +340,8 @@ router.get('/declare-winner/:gameId', (req, res) => {
       teamName: `Team ${teamId.split('_')[1]}`
     }));
     
+    console.log(`   ✅ Winner declared successfully: ${winners.map(w => w.teamName).join(', ')}`);
+    
     res.json({
       success: true,
       gameId,
@@ -333,6 +353,7 @@ router.get('/declare-winner/:gameId', (req, res) => {
         : `It's a tie! ${winners.map(w => w.teamName).join(', ')} all have ${result.maxScore} points!`
     });
   } catch (error) {
+    console.error(`   ❌ Error in declare-winner: ${error.message}`);
     res.status(400).json({ error: error.message });
   }
 });
