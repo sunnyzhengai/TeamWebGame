@@ -346,7 +346,7 @@
                 showLoading();
 
                 // Load round info
-                const roundRes = await fetch(`http://localhost:4000/api/round-info/${roundId}`);
+                const roundRes = await fetch(`/api/round-info/${roundId}`);
                 const roundData = await roundRes.json();
 
                 if (!roundRes.ok) {
@@ -357,7 +357,7 @@
                 currentGame = { gameId: roundData.gameId };
 
                 // Load scores
-                const scoresRes = await fetch(`http://localhost:4000/api/score-guesses/${roundId}`);
+                const scoresRes = await fetch(`/api/score-guesses/${roundId}`);
                 const scoresData = await scoresRes.json();
 
                 if (!scoresRes.ok) {
@@ -368,7 +368,7 @@
                 let overallStandings = null;
                 if (roundData.gameId) {
                     try {
-                        const standingsRes = await fetch(`http://localhost:4000/api/scoreboard/${roundData.gameId}`);
+                        const standingsRes = await fetch(`/api/scoreboard/${roundData.gameId}`);
                         const standingsData = await standingsRes.json();
                         if (standingsRes.ok) {
                             overallStandings = standingsData;
@@ -522,7 +522,7 @@
             }
 
             try {
-                const res = await fetch(`http://localhost:4000/api/score-guesses/${roundId}`);
+                const res = await fetch(`/api/score-guesses/${roundId}`);
                 const data = await res.json();
                 
                 if (res.ok) {
