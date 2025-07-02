@@ -1,8 +1,16 @@
 const express = require('express');
-const resetGameData = require('./resetData');
-resetGameData(); // 💣 Clears data on every server restart
 const cors = require('cors');
 const path = require('path');
+
+// Try to reset data, but don't crash if it fails
+try {
+  const resetGameData = require('./resetData');
+  resetGameData(); // 💣 Clears data on every server restart
+} catch (error) {
+  console.error('❌ [Startup] Error during data reset:', error.message);
+  // Continue with server startup even if reset fails
+}
+
 const gameRoutes = require('./routes/gameRoutes');
 
 const app = express();
