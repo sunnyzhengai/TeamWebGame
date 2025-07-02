@@ -467,7 +467,7 @@
 
         async function fetchGameIdFromGameCode() {
             try {
-                const res = await fetch(`http://localhost:4000/api/game-info/${gameCode}`);
+                const res = await fetch(`/api/game-info/${gameCode}`);
                 const data = await res.json();
                 
                 if (res.ok && data.gameId) {
@@ -499,7 +499,7 @@
                 showLoading();
 
                 // Load winner data
-                const winnerRes = await fetch(`http://localhost:4000/api/declare-winner/${gameId}`);
+                const winnerRes = await fetch(`/api/declare-winner/${gameId}`);
                 const winnerData = await winnerRes.json();
 
                 if (!winnerRes.ok) {
@@ -507,7 +507,7 @@
                 }
 
                 // Load overall scoreboard
-                const scoreboardRes = await fetch(`http://localhost:4000/api/scoreboard/${gameId}`);
+                const scoreboardRes = await fetch(`/api/scoreboard/${gameId}`);
                 const scoreboardData = await scoreboardRes.json();
 
                 if (!scoreboardRes.ok) {
@@ -515,7 +515,7 @@
                 }
 
                 // Load game info
-                const gameInfoRes = await fetch(`http://localhost:4000/api/game-info/${gameCode}`);
+                const gameInfoRes = await fetch(`/api/game-info/${gameCode}`);
                 const gameInfo = await gameInfoRes.json();
 
                 if (!gameInfoRes.ok) {
@@ -667,7 +667,7 @@
         function goToScoreboard() {
             if (gameCode && gameId) {
                 // Try to get the latest round ID
-                fetch(`http://localhost:4000/api/game-info/${gameCode}`)
+                fetch(`/api/game-info/${gameCode}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.currentRoundId) {
