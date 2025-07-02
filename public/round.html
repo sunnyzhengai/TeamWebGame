@@ -126,15 +126,20 @@
     // --- Init ---
     window.addEventListener('DOMContentLoaded', async ()=>{
       const {gameCode, roundId, playerId} = getParams();
+      console.log('Round page params:', {gameCode, roundId, playerId});
       if (!gameCode || !roundId || !playerId) { showStatus('Missing URL params','error'); return; }
       try {
         // Load round
-        let rRes = await fetch(`/api/round-info/${roundId}`); round = await rRes.json();
+        let rRes = await fetch(`/api/round-info/${roundId}`); 
+        console.log('Round API response status:', rRes.status);
+        round = await rRes.json();
         console.log('Round info response:', round);
         if (!rRes.ok) throw new Error(round.error||'Round not found');
         
         // Load player
-        let pRes = await fetch(`/api/player-info/${playerId}`); player = await pRes.json();
+        let pRes = await fetch(`/api/player-info/${playerId}`); 
+        console.log('Player API response status:', pRes.status);
+        player = await pRes.json();
         console.log('Player info response:', player);
         if (!pRes.ok) throw new Error(player.error||'Player not found');
         
@@ -146,7 +151,9 @@
         
         // Load team - use gameCode directly
         let tRes = await fetch(`/api/team-details/${gameCode}/${player.teamId}`); 
+        console.log('Team API response status:', tRes.status);
         team = await tRes.json();
+        console.log('Team details response:', team);
         if (!tRes.ok) throw new Error(team.error||'Team not found');
         
         // Category & items
