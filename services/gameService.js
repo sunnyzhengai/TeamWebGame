@@ -1,44 +1,25 @@
 // services/gameService.js
-// In-memory storage for serverless compatibility
 const games = {};
 const players = {};
 const rounds = {};
 
-// Add some debugging and error handling
-function logDataState() {
-  console.log('Current data state:');
-  console.log('- Games:', Object.keys(games).length);
-  console.log('- Players:', Object.keys(players).length);
-  console.log('- Rounds:', Object.keys(rounds).length);
-}
-
-// Initialize with some logging
-console.log('GameService initialized with in-memory storage');
-logDataState();
-
 function create_game(adminName, numTeams = 2) {
   const gameId = Date.now().toString();
   const gameCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-  
-  const game = {
+
+  games[gameId] = {
     gameId,
     gameCode,
     adminName,
     numTeams,
     players: [],
     teams: [],
-    teamDetails: [],
     rounds: [],
-    currentRoundId: null,
-    status: 'waiting', // waiting, in_progress, completed
+    status: 'waiting',
     createdAt: new Date().toISOString()
   };
-  
-  games[gameId] = game;
-  console.log(`Created game: ${gameCode} (${gameId})`);
-  logDataState();
-  
-  return game;
+
+  return games[gameId];
 }
 
 function add_player_to_game(gameCode, playerName) {
@@ -56,7 +37,6 @@ function add_player_to_game(gameCode, playerName) {
 
   players[playerId] = player;
   game.players.push(playerId);
-  console.log(`Added player: ${playerName} to game: ${gameCode}`);
   return player;
 }
 
@@ -107,7 +87,6 @@ function start_game(gameId) {
   game.teamDetails = teams; // Store full team details
   game.status = 'in_progress';
   
-  console.log(`Started game: ${game.gameCode} with ${teams.length} teams`);
   return {
     teams,
     distribution: {
@@ -143,7 +122,6 @@ function select_origin_team(gameId, teamId) {
   game.rounds.push(roundId);
   game.currentRoundId = roundId;
 
-  console.log(`Created round: ${roundId} for team: ${teamId}`);
   return round;
 }
 
@@ -155,7 +133,6 @@ function set_round_preferences(roundId, category, items) {
   round.category = category;
   round.items = items;
   round.status = 'active'; // Move to active status after preferences are set
-  console.log(`Set preferences for round: ${roundId} - ${category}: ${items.join(', ')}`);
   return round;
 }
 
@@ -166,7 +143,6 @@ function submit_origin_ranking(roundId, teamId, orderedItems) {
   if (round.originRanking) throw new Error('Ranking already submitted');
 
   round.originRanking = orderedItems;
-  console.log(`Origin ranking submitted for round: ${roundId}`);
   return round;
 }
 
@@ -183,7 +159,6 @@ function submit_guess(roundId, teamId, guess) {
   }
 
   round.guesses.push({ teamId, guess });
-  console.log(`Guess submitted for team: ${teamId} in round: ${roundId}`);
   return round;
 }
 
@@ -217,7 +192,6 @@ function end_current_round(gameId) {
   }
   
   game.currentRoundId = null;
-  console.log(`Ended round: ${round?.roundId} for game: ${gameId}`);
   return round;
 }
 
@@ -352,15 +326,14 @@ module.exports = {
   submit_origin_ranking,
   submit_guess,
   score_guesses,
+  get_scoreboard,
   get_current_round,
   end_current_round,
   get_team_info,
   get_team_details,
-  get_scoreboard,
   declare_winner,
   get_origin_team_info,
-  // Export data for debugging
-  games,
-  players,
-  rounds
+  games,  // exported for testing/inspection
+  players,  // exported for testing/inspection
+  rounds   // exported for testing/inspection
 };

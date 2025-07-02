@@ -11,16 +11,9 @@ router.post('/create-game', (req, res) => {
 router.post('/add-player', (req, res) => {
   try {
     const { gameCode, playerName } = req.body;
-    console.log('Add player request:', { gameCode, playerName });
-    console.log('Available games before adding player:', Object.keys(games));
-    
     const player = add_player_to_game(gameCode, playerName);
-    console.log('Player added successfully:', player);
-    console.log('Available games after adding player:', Object.keys(games));
-    
     res.json(player);
   } catch (error) {
-    console.error('Error adding player:', error);
     res.status(404).json({ error: error.message });
   }
 });
@@ -43,19 +36,11 @@ router.post('/start-game', (req, res) => {
 router.get('/game-info/:gameCode', (req, res) => {
   try {
     const { gameCode } = req.params;
-    console.log('Game info request for gameCode:', gameCode);
-    console.log('Available games:', Object.keys(games));
-    console.log('Games data:', games);
-    
     const game = Object.values(games).find(g => g.gameCode === gameCode);
-    console.log('Found game:', game);
-    
     if (!game) {
-      console.log('Game not found for gameCode:', gameCode);
       return res.status(404).json({ error: 'Game not found' });
     }
-    
-    const response = {
+    res.json({
       gameId: game.gameId,
       gameCode: game.gameCode,
       adminName: game.adminName,
@@ -63,12 +48,8 @@ router.get('/game-info/:gameCode', (req, res) => {
       numTeams: game.numTeams,
       status: game.status,
       currentRoundId: game.currentRoundId
-    };
-    
-    console.log('Sending game info response:', response);
-    res.json(response);
+    });
   } catch (error) {
-    console.error('Error in game-info endpoint:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -155,9 +136,6 @@ router.get('/round-info/:roundId', (req, res) => {
       return res.status(404).json({ error: 'Round not found' });
     }
     
-    // Add roundId to the round object
-    round.roundId = roundId;
-    
     // Find the game that contains this round
     const game = Object.values(games).find(g => g.rounds && g.rounds.includes(roundId));
     if (game) {
@@ -226,30 +204,17 @@ router.get('/origin-team-info/:roundId', (req, res) => {
 router.post('/set-round-preferences', (req, res) => {
   try {
     const { roundId, category, items } = req.body;
-    console.log('Received set-round-preferences request:', { roundId, category, items });
-    console.log('Available rounds:', Object.keys(rounds));
-    
     if (!roundId || !category || !items || !Array.isArray(items)) {
-      console.error('Invalid request data:', { roundId, category, items });
       return res.status(400).json({ error: 'Round ID, category, and items array are required' });
     }
     
-    console.log('Looking for round with ID:', roundId);
-    console.log('Round exists:', !!rounds[roundId]);
-    if (rounds[roundId]) {
-      console.log('Round details:', rounds[roundId]);
-    }
-    
     const round = set_round_preferences(roundId, category, items);
-    console.log('Successfully set preferences for round:', round);
-    
     res.json({
       success: true,
       round,
       message: `Round preferences set successfully. Round is now active.`
     });
   } catch (error) {
-    console.error('Error in set-round-preferences:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -374,31 +339,20 @@ router.get('/declare-winner/:gameId', (req, res) => {
 
 router.get('/debug/games', (req, res) => {
   try {
-    console.log('Debug games request');
-    console.log('Available games:', Object.keys(games));
-    console.log('Games data:', games);
-    
     const gameList = Object.values(games).map(game => ({
       gameId: game.gameId,
       gameCode: game.gameCode,
       adminName: game.adminName,
       playerCount: game.players.length,
-      status: game.status,
-      createdAt: game.createdAt
+      status: game.status
     }));
     
     res.json({
       success: true,
       games: gameList,
-      totalGames: gameList.length,
-      memoryInfo: {
-        gamesCount: Object.keys(games).length,
-        playersCount: Object.keys(players).length,
-        roundsCount: Object.keys(rounds).length
-      }
+      totalGames: gameList.length
     });
   } catch (error) {
-    console.error('Error in debug games:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -448,50 +402,6 @@ router.get('/refresh-scores/:roundId', (req, res) => {
       message: `Scores refreshed! ${totalGuesses} guesses scored against origin ranking.`
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Data restoration endpoint for serverless environments
-router.post('/restore-game-data', (req, res) => {
-  try {
-    const { gameData, roundData, playerData } = req.body;
-    console.log('Restoring game data from client:', { 
-      hasGameData: !!gameData, 
-      hasRoundData: !!roundData, 
-      hasPlayerData: !!playerData 
-    });
-    
-    if (gameData) {
-      games[gameData.gameId] = gameData;
-      console.log('Restored game:', gameData.gameCode);
-    }
-    
-    if (roundData) {
-      rounds[roundData.roundId] = roundData;
-      console.log('Restored round:', roundData.roundId);
-    }
-    
-    if (playerData) {
-      Object.entries(playerData).forEach(([playerId, player]) => {
-        players[playerId] = player;
-      });
-      console.log('Restored players:', Object.keys(playerData).length);
-    }
-    
-    console.log('After restoration - Games:', Object.keys(games).length, 'Rounds:', Object.keys(rounds).length, 'Players:', Object.keys(players).length);
-    
-    res.json({
-      success: true,
-      message: 'Game data restored successfully',
-      restored: {
-        games: Object.keys(games).length,
-        rounds: Object.keys(rounds).length,
-        players: Object.keys(players).length
-      }
-    });
-  } catch (error) {
-    console.error('Error restoring game data:', error);
     res.status(400).json({ error: error.message });
   }
 });
